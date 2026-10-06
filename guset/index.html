@@ -1,0 +1,3883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<title>Bluemist Guest Portal</title>
+
+<meta
+  name="description"
+  content="Bluemist Homestay Guest Portal"
+/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+:root{
+  --bg:#f5f5f1;
+  --card:#ffffff;
+  --dark:#243139;
+  --dark2:#34444c;
+  --green:#55785e;
+  --green2:#eaf1eb;
+  --gold:#a4814b;
+  --text:#202624;
+  --muted:#7a807b;
+  --line:#e6e4dd;
+  --red:#a44f4f;
+  --blue:#4d7080;
+  --shadow:0 18px 50px rgba(31,42,45,.08);
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f4f5f1 0%,
+      #faf9f5 45%,
+      #f3f3ef 100%
+    );
+
+  color:var(--text);
+  min-height:100vh;
+}
+
+button,
+input,
+textarea,
+select{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.hidden{
+  display:none!important;
+}
+
+
+/* ============================================================
+   LOADING
+============================================================ */
+
+#loadingScreen{
+  min-height:100vh;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:25px;
+}
+
+.loading-card{
+  width:min(420px,100%);
+
+  background:rgba(255,255,255,.9);
+
+  border:1px solid var(--line);
+
+  border-radius:28px;
+
+  padding:38px 25px;
+
+  text-align:center;
+
+  box-shadow:var(--shadow);
+}
+
+.loading-logo{
+  width:76px;
+  height:76px;
+
+  border-radius:20px;
+
+  object-fit:cover;
+
+  margin-bottom:18px;
+}
+
+.loading-card h1{
+  font:500 27px Georgia,serif;
+}
+
+.loading-card p{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:7px;
+}
+
+.spinner{
+  width:30px;
+  height:30px;
+
+  border:3px solid #e5e7e2;
+  border-top-color:var(--green);
+
+  border-radius:50%;
+
+  margin:23px auto 0;
+
+  animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+
+/* ============================================================
+   ERROR
+============================================================ */
+
+#errorScreen{
+  min-height:100vh;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:25px;
+}
+
+.error-card{
+  width:min(450px,100%);
+
+  background:#fff;
+
+  border:1px solid var(--line);
+
+  border-radius:26px;
+
+  padding:35px 25px;
+
+  text-align:center;
+
+  box-shadow:var(--shadow);
+}
+
+.error-icon{
+  width:62px;
+  height:62px;
+
+  border-radius:50%;
+
+  display:grid;
+  place-items:center;
+
+  margin:0 auto 18px;
+
+  background:#f8eaea;
+
+  color:var(--red);
+
+  font-size:25px;
+}
+
+.error-card h1{
+  font:500 26px Georgia,serif;
+}
+
+.error-card p{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.7;
+  margin-top:10px;
+}
+
+.error-card button{
+  margin-top:20px;
+}
+
+
+/* ============================================================
+   APP
+============================================================ */
+
+#app{
+  min-height:100vh;
+  padding-bottom:35px;
+}
+
+
+/* ============================================================
+   HEADER
+============================================================ */
+
+.header{
+  position:sticky;
+
+  top:0;
+
+  z-index:20;
+
+  background:rgba(250,250,247,.9);
+
+  backdrop-filter:blur(18px);
+
+  border-bottom:1px solid rgba(225,224,218,.85);
+
+  padding:
+    calc(13px + env(safe-area-inset-top))
+    17px
+    13px;
+}
+
+.header-inner{
+  max-width:760px;
+  margin:auto;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:space-between;
+
+  gap:15px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+
+.brand-logo{
+  width:42px;
+  height:42px;
+
+  border-radius:13px;
+
+  object-fit:cover;
+
+  background:#fff;
+}
+
+.brand-name{
+  font:500 18px Georgia,serif;
+}
+
+.brand-sub{
+  font-size:9px;
+  color:var(--muted);
+  margin-top:2px;
+}
+
+.help-button{
+  width:42px;
+  height:42px;
+
+  border-radius:50%;
+
+  border:1px solid var(--line);
+
+  background:#fff;
+
+  color:var(--dark);
+
+  font-weight:800;
+}
+
+
+/* ============================================================
+   HERO
+============================================================ */
+
+.container{
+  width:min(760px,100%);
+  margin:auto;
+
+  padding:
+    18px
+    17px
+    0;
+}
+
+.hero{
+  position:relative;
+
+  overflow:hidden;
+
+  border-radius:27px;
+
+  min-height:245px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #293941,
+      #52655d
+    );
+
+  color:#fff;
+
+  padding:28px 24px;
+
+  box-shadow:0 20px 55px rgba(38,49,55,.17);
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:flex-end;
+}
+
+.hero:before{
+  content:"";
+
+  position:absolute;
+
+  width:260px;
+  height:260px;
+
+  border-radius:50%;
+
+  right:-90px;
+  top:-100px;
+
+  background:rgba(255,255,255,.08);
+}
+
+.hero:after{
+  content:"";
+
+  position:absolute;
+
+  width:170px;
+  height:170px;
+
+  border-radius:50%;
+
+  left:-90px;
+  bottom:-100px;
+
+  background:rgba(255,255,255,.05);
+}
+
+.hero-content{
+  position:relative;
+  z-index:2;
+}
+
+.hero-eyebrow{
+  font-size:9px;
+
+  text-transform:uppercase;
+
+  letter-spacing:2px;
+
+  color:#d7dfd9;
+
+  margin-bottom:8px;
+}
+
+.hero h1{
+  font:500 33px Georgia,serif;
+
+  line-height:1.1;
+}
+
+.hero p{
+  color:#dce3df;
+
+  font-size:12px;
+
+  margin-top:8px;
+}
+
+.room-pill{
+  display:inline-flex;
+
+  align-items:center;
+
+  gap:7px;
+
+  margin-top:17px;
+
+  background:rgba(255,255,255,.12);
+
+  border:1px solid rgba(255,255,255,.17);
+
+  padding:8px 11px;
+
+  border-radius:99px;
+
+  font-size:10px;
+
+  font-weight:700;
+}
+
+
+/* ============================================================
+   QUICK ACTIONS
+============================================================ */
+
+.quick-actions{
+  display:grid;
+
+  grid-template-columns:
+    repeat(4,1fr);
+
+  gap:10px;
+
+  margin-top:14px;
+}
+
+.quick{
+  border:1px solid var(--line);
+
+  background:#fff;
+
+  border-radius:17px;
+
+  min-height:90px;
+
+  padding:13px 8px;
+
+  text-align:center;
+
+  box-shadow:0 7px 25px rgba(35,45,47,.035);
+}
+
+.quick-icon{
+  width:34px;
+  height:34px;
+
+  margin:0 auto 8px;
+
+  display:grid;
+  place-items:center;
+
+  border-radius:11px;
+
+  background:var(--green2);
+
+  color:var(--green);
+
+  font-size:15px;
+}
+
+.quick strong{
+  display:block;
+
+  font-size:10px;
+}
+
+.quick span{
+  display:block;
+
+  color:var(--muted);
+
+  font-size:8px;
+
+  margin-top:3px;
+}
+
+
+/* ============================================================
+   SECTIONS
+============================================================ */
+
+.section{
+  margin-top:25px;
+}
+
+.section-head{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:flex-end;
+
+  gap:15px;
+
+  margin-bottom:12px;
+}
+
+.section-head h2{
+  font:500 23px Georgia,serif;
+}
+
+.section-head p{
+  color:var(--muted);
+
+  font-size:10px;
+
+  margin-top:4px;
+}
+
+
+/* ============================================================
+   CARDS
+============================================================ */
+
+.card{
+  background:var(--card);
+
+  border:1px solid var(--line);
+
+  border-radius:20px;
+
+  padding:17px;
+
+  box-shadow:
+    0 7px 28px
+    rgba(35,45,47,.04);
+
+  margin-bottom:11px;
+}
+
+.card-row{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  gap:12px;
+}
+
+.card-title{
+  font-weight:800;
+
+  font-size:13px;
+}
+
+.card-sub{
+  color:var(--muted);
+
+  font-size:10px;
+
+  line-height:1.6;
+
+  margin-top:4px;
+}
+
+.badge{
+  display:inline-flex;
+
+  align-items:center;
+
+  padding:6px 9px;
+
+  border-radius:99px;
+
+  font-size:8px;
+
+  font-weight:800;
+
+  text-transform:uppercase;
+
+  white-space:nowrap;
+}
+
+.badge-green{
+  background:#edf5ee;
+  color:var(--green);
+}
+
+.badge-blue{
+  background:#eaf1f5;
+  color:var(--blue);
+}
+
+.badge-orange{
+  background:#f8f1e3;
+  color:var(--gold);
+}
+
+.badge-gray{
+  background:#efefed;
+  color:#6d716e;
+}
+
+
+/* ============================================================
+   ROOM DETAILS
+============================================================ */
+
+.room-details{
+  display:grid;
+
+  grid-template-columns:
+    repeat(3,1fr);
+
+  gap:8px;
+
+  margin-top:15px;
+}
+
+.detail{
+  background:#f7f7f3;
+
+  border-radius:13px;
+
+  padding:11px;
+}
+
+.detail small{
+  display:block;
+
+  color:var(--muted);
+
+  font-size:8px;
+}
+
+.detail strong{
+  display:block;
+
+  margin-top:5px;
+
+  font-size:11px;
+}
+
+
+/* ============================================================
+   FOOD
+============================================================ */
+
+.meal-tabs{
+  display:flex;
+
+  gap:7px;
+
+  overflow-x:auto;
+
+  padding-bottom:3px;
+
+  margin-bottom:12px;
+}
+
+.meal-tab{
+  border:1px solid var(--line);
+
+  background:#fff;
+
+  color:var(--muted);
+
+  border-radius:99px;
+
+  padding:8px 12px;
+
+  font-size:9px;
+
+  font-weight:800;
+
+  white-space:nowrap;
+}
+
+.meal-tab.active{
+  background:var(--dark);
+
+  border-color:var(--dark);
+
+  color:#fff;
+}
+
+.menu-item{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  gap:12px;
+
+  padding:13px 0;
+
+  border-bottom:1px solid #efeee9;
+}
+
+.menu-item:last-child{
+  border-bottom:0;
+}
+
+.menu-info{
+  min-width:0;
+}
+
+.menu-name{
+  font-size:12px;
+
+  font-weight:800;
+}
+
+.menu-description{
+  font-size:9px;
+
+  color:var(--muted);
+
+  margin-top:4px;
+
+  line-height:1.5;
+}
+
+.menu-price{
+  font-size:11px;
+
+  font-weight:800;
+
+  white-space:nowrap;
+}
+
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+
+.primary{
+  width:100%;
+
+  border:0;
+
+  border-radius:12px;
+
+  background:var(--dark);
+
+  color:#fff;
+
+  padding:13px 15px;
+
+  font-size:11px;
+
+  font-weight:800;
+}
+
+.primary.green{
+  background:var(--green);
+}
+
+.secondary{
+  border:1px solid var(--line);
+
+  background:#fff;
+
+  color:var(--dark);
+
+  border-radius:11px;
+
+  padding:10px 13px;
+
+  font-size:10px;
+
+  font-weight:800;
+}
+
+.whatsapp{
+  background:#4f805b;
+  color:#fff;
+
+  border:0;
+
+  border-radius:12px;
+
+  padding:13px 15px;
+
+  width:100%;
+
+  font-size:11px;
+
+  font-weight:800;
+}
+
+
+/* ============================================================
+   FORM
+============================================================ */
+
+.field{
+  margin-bottom:12px;
+}
+
+.field label{
+  display:block;
+
+  font-size:9px;
+
+  font-weight:800;
+
+  color:#636964;
+
+  margin-bottom:6px;
+}
+
+.field input,
+.field textarea,
+.field select{
+  width:100%;
+
+  border:1px solid var(--line);
+
+  background:#fff;
+
+  border-radius:11px;
+
+  padding:11px 12px;
+
+  outline:none;
+
+  color:var(--text);
+
+  font-size:11px;
+}
+
+.field textarea{
+  resize:vertical;
+
+  min-height:90px;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus{
+  border-color:#9aac9c;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(110,140,115,.1);
+}
+
+.form-grid{
+  display:grid;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap:10px;
+}
+
+.full{
+  grid-column:1/-1;
+}
+
+
+/* ============================================================
+   SERVICE BUTTONS
+============================================================ */
+
+.service-grid{
+  display:grid;
+
+  grid-template-columns:
+    repeat(2,1fr);
+
+  gap:10px;
+}
+
+.service-card{
+  background:#fff;
+
+  border:1px solid var(--line);
+
+  border-radius:17px;
+
+  padding:16px;
+
+  text-align:left;
+
+  box-shadow:
+    0 7px 25px
+    rgba(35,45,47,.035);
+}
+
+.service-icon{
+  width:37px;
+  height:37px;
+
+  border-radius:12px;
+
+  background:#f0f3ef;
+
+  color:var(--green);
+
+  display:grid;
+
+  place-items:center;
+
+  font-size:16px;
+
+  margin-bottom:10px;
+}
+
+.service-card strong{
+  display:block;
+
+  font-size:11px;
+}
+
+.service-card span{
+  display:block;
+
+  color:var(--muted);
+
+  font-size:8px;
+
+  margin-top:4px;
+
+  line-height:1.5;
+}
+
+
+/* ============================================================
+   BILL
+============================================================ */
+
+.bill{
+  background:#fff;
+
+  border:1px solid var(--line);
+
+  border-radius:20px;
+
+  padding:18px;
+}
+
+.bill-header{
+  display:flex;
+
+  justify-content:space-between;
+
+  gap:15px;
+
+  padding-bottom:15px;
+
+  border-bottom:1px solid var(--line);
+}
+
+.bill-brand{
+  font:500 20px Georgia,serif;
+}
+
+.bill-small{
+  color:var(--muted);
+
+  font-size:9px;
+
+  margin-top:3px;
+}
+
+.bill-number{
+  text-align:right;
+
+  font-size:9px;
+
+  color:var(--muted);
+}
+
+.bill-row{
+  display:flex;
+
+  justify-content:space-between;
+
+  gap:12px;
+
+  padding:9px 0;
+
+  border-bottom:1px dashed #ddd;
+
+  font-size:10px;
+}
+
+.bill-row:last-child{
+  border-bottom:0;
+}
+
+.bill-total{
+  font-size:20px;
+
+  font-weight:900;
+}
+
+.bill-balance{
+  font-size:18px;
+
+  font-weight:900;
+
+  color:var(--green);
+}
+
+
+/* ============================================================
+   FOOTER
+============================================================ */
+
+.footer{
+  text-align:center;
+
+  color:var(--muted);
+
+  font-size:9px;
+
+  line-height:1.7;
+
+  padding:
+    30px
+    15px
+    calc(30px + env(safe-area-inset-bottom));
+}
+
+.footer strong{
+  color:var(--text);
+}
+
+
+/* ============================================================
+   MODAL
+============================================================ */
+
+.modal{
+  position:fixed;
+
+  inset:0;
+
+  z-index:100;
+
+  background:rgba(20,27,30,.5);
+
+  backdrop-filter:blur(5px);
+
+  display:none;
+
+  align-items:flex-end;
+
+  justify-content:center;
+}
+
+.modal.open{
+  display:flex;
+}
+
+.modal-box{
+  width:min(760px,100%);
+
+  max-height:
+    90vh;
+
+  overflow:auto;
+
+  background:#fff;
+
+  border-radius:
+    25px
+    25px
+    0
+    0;
+
+  padding:20px 17px;
+
+  box-shadow:
+    0 -20px 60px
+    rgba(0,0,0,.15);
+}
+
+.modal-head{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:17px;
+}
+
+.modal-head h2{
+  font:500 22px Georgia,serif;
+}
+
+.close{
+  width:34px;
+  height:34px;
+
+  border:0;
+
+  border-radius:50%;
+
+  background:#f1f1ed;
+
+  color:#444;
+
+  font-size:18px;
+}
+
+
+/* ============================================================
+   TOAST
+============================================================ */
+
+#toast{
+  position:fixed;
+
+  left:50%;
+
+  bottom:
+    calc(
+      20px +
+      env(safe-area-inset-bottom)
+    );
+
+  transform:
+    translate(-50%,20px);
+
+  opacity:0;
+
+  pointer-events:none;
+
+  z-index:200;
+
+  width:min(92%,420px);
+
+  background:var(--dark);
+
+  color:#fff;
+
+  padding:12px 15px;
+
+  border-radius:12px;
+
+  text-align:center;
+
+  font-size:10px;
+
+  transition:.25s;
+}
+
+#toast.show{
+  opacity:1;
+
+  transform:
+    translate(-50%,0);
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media(max-width:560px){
+
+  .hero{
+    min-height:235px;
+
+    padding:24px 20px;
+  }
+
+  .hero h1{
+    font-size:29px;
+  }
+
+  .quick-actions{
+    grid-template-columns:
+      repeat(4,1fr);
+  }
+
+  .quick{
+    padding:
+      11px
+      4px;
+  }
+
+  .quick span{
+    display:none;
+  }
+
+  .room-details{
+    grid-template-columns:
+      repeat(3,1fr);
+  }
+
+}
+
+@media(max-width:400px){
+
+  .quick-actions{
+    gap:6px;
+  }
+
+  .quick{
+    min-height:76px;
+  }
+
+  .quick strong{
+    font-size:9px;
+  }
+
+  .service-grid{
+    grid-template-columns:1fr;
+  }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- ============================================================
+     LOADING
+============================================================ -->
+
+<section id="loadingScreen">
+
+  <div class="loading-card">
+
+    <img
+      class="loading-logo"
+      src="../bluemist-logo.png"
+      alt="Bluemist"
+    >
+
+    <h1>Bluemist Homestay</h1>
+
+    <p>
+      Preparing your guest portal...
+    </p>
+
+    <div class="spinner"></div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     ERROR
+============================================================ -->
+
+<section
+  id="errorScreen"
+  class="hidden"
+>
+
+  <div class="error-card">
+
+    <div class="error-icon">
+      !
+    </div>
+
+    <h1>
+      QR unavailable
+    </h1>
+
+    <p id="errorMessage">
+      This QR code is invalid, inactive,
+      or could not be connected to a room.
+    </p>
+
+    <button
+      class="secondary"
+      onclick="location.reload()"
+    >
+      Try Again
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     APP
+============================================================ -->
+
+<section
+  id="app"
+  class="hidden"
+>
+
+
+<!-- HEADER -->
+
+<header class="header">
+
+  <div class="header-inner">
+
+    <div class="brand">
+
+      <img
+        src="../bluemist-logo.png"
+        class="brand-logo"
+        alt="Bluemist"
+      >
+
+      <div>
+
+        <div class="brand-name">
+          Bluemist
+        </div>
+
+        <div class="brand-sub">
+          GUEST PORTAL
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <button
+      class="help-button"
+      onclick="openHelpModal()"
+      aria-label="Help"
+    >
+      ?
+    </button>
+
+  </div>
+
+</header>
+
+
+<main class="container">
+
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+
+<section class="hero">
+
+  <div class="hero-content">
+
+    <div class="hero-eyebrow">
+      Welcome to Bluemist Homestay
+    </div>
+
+    <h1 id="heroRoom">
+      Your Room
+    </h1>
+
+    <p id="heroSubtitle">
+      Everything you need during your stay.
+    </p>
+
+    <div class="room-pill">
+
+      <span>●</span>
+
+      <span id="heroRoomNumber">
+        Room
+      </span>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     QUICK ACTIONS
+============================================================ -->
+
+<section class="quick-actions">
+
+  <button
+    class="quick"
+    onclick="scrollToSection('checkin')"
+  >
+
+    <div class="quick-icon">
+      ✓
+    </div>
+
+    <strong>
+      Check-in
+    </strong>
+
+    <span>
+      Guest details
+    </span>
+
+  </button>
+
+
+  <button
+    class="quick"
+    onclick="scrollToSection('food')"
+  >
+
+    <div class="quick-icon">
+      ◉
+    </div>
+
+    <strong>
+      Food
+    </strong>
+
+    <span>
+      Today's menu
+    </span>
+
+  </button>
+
+
+  <button
+    class="quick"
+    onclick="scrollToSection('services')"
+  >
+
+    <div class="quick-icon">
+      ✦
+    </div>
+
+    <strong>
+      Services
+    </strong>
+
+    <span>
+      Request help
+    </span>
+
+  </button>
+
+
+  <button
+    class="quick"
+    onclick="scrollToSection('bill')"
+  >
+
+    <div class="quick-icon">
+      ₹
+    </div>
+
+    <strong>
+      Bill
+    </strong>
+
+    <span>
+      Stay balance
+    </span>
+
+  </button>
+
+</section>
+
+
+<!-- ============================================================
+     ROOM
+============================================================ -->
+
+<section class="section">
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        Your stay
+      </h2>
+
+      <p>
+        Room information
+      </p>
+
+    </div>
+
+    <span
+      class="badge badge-green"
+      id="roomStatus"
+    >
+      Available
+    </span>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="card-row">
+
+      <div>
+
+        <div
+          class="card-title"
+          id="roomName"
+        >
+          Bluemist Room
+        </div>
+
+        <div
+          class="card-sub"
+          id="roomType"
+        >
+          Guest room
+        </div>
+
+      </div>
+
+      <div
+        class="badge badge-blue"
+        id="roomNumberBadge"
+      >
+        ROOM
+      </div>
+
+    </div>
+
+
+    <div class="room-details">
+
+      <div class="detail">
+
+        <small>
+          Capacity
+        </small>
+
+        <strong id="roomCapacity">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="detail">
+
+        <small>
+          Room
+        </small>
+
+        <strong id="roomNumberDetail">
+          —
+        </strong>
+
+      </div>
+
+
+      <div class="detail">
+
+        <small>
+          Portal
+        </small>
+
+        <strong>
+          Active
+        </strong>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     CHECK-IN
+============================================================ -->
+
+<section
+  class="section"
+  id="checkin"
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        Check-in
+      </h2>
+
+      <p>
+        Tell us who is staying
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="notice"
+         style="
+           background:#f5f7f2;
+           border-radius:12px;
+           padding:11px;
+           font-size:9px;
+           color:#687066;
+           margin-bottom:14px;
+         "
+    >
+
+      Please enter the main guest details.
+      Reception can verify your details when
+      you arrive.
+
+    </div>
+
+
+    <form id="checkinForm">
+
+      <div class="form-grid">
+
+        <div class="field">
+
+          <label>
+            Full name
+          </label>
+
+          <input
+            id="guestName"
+            type="text"
+            placeholder="Your full name"
+            required
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Phone
+          </label>
+
+          <input
+            id="guestPhone"
+            type="tel"
+            placeholder="+91"
+            required
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Email
+          </label>
+
+          <input
+            id="guestEmail"
+            type="email"
+            placeholder="Email address"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            ID type
+          </label>
+
+          <select id="guestIdType">
+
+            <option value="">
+              Select ID
+            </option>
+
+            <option value="Aadhaar">
+              Aadhaar
+            </option>
+
+            <option value="Passport">
+              Passport
+            </option>
+
+            <option value="Driving Licence">
+              Driving Licence
+            </option>
+
+            <option value="Voter ID">
+              Voter ID
+            </option>
+
+            <option value="Other">
+              Other
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="field full">
+
+          <label>
+            ID number
+          </label>
+
+          <input
+            id="guestIdNumber"
+            type="text"
+            placeholder="ID number"
+          >
+
+        </div>
+
+      </div>
+
+
+      <button
+        class="primary green"
+        type="submit"
+        id="checkinButton"
+      >
+        Submit Check-in Details
+      </button>
+
+    </form>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     FOOD
+============================================================ -->
+
+<section
+  class="section"
+  id="food"
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        Today's food
+      </h2>
+
+      <p>
+        Fixed homestay menu
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="meal-tabs">
+
+    <button
+      class="meal-tab active"
+      data-meal="breakfast"
+      onclick="selectMeal('breakfast')"
+    >
+      Breakfast
+    </button>
+
+    <button
+      class="meal-tab"
+      data-meal="lunch"
+      onclick="selectMeal('lunch')"
+    >
+      Lunch
+    </button>
+
+    <button
+      class="meal-tab"
+      data-meal="evening"
+      onclick="selectMeal('evening')"
+    >
+      Evening
+    </button>
+
+    <button
+      class="meal-tab"
+      data-meal="dinner"
+      onclick="selectMeal('dinner')"
+    >
+      Dinner
+    </button>
+
+  </div>
+
+
+  <div
+    class="card"
+    id="menuCard"
+  >
+
+    <div class="empty"
+         style="
+           text-align:center;
+           color:var(--muted);
+           padding:20px;
+           font-size:10px;
+         "
+    >
+      Loading today's menu...
+    </div>
+
+  </div>
+
+
+  <button
+    class="primary green"
+    onclick="openFoodModal()"
+  >
+    Request a Meal
+  </button>
+
+</section>
+
+
+<!-- ============================================================
+     SERVICES
+============================================================ -->
+
+<section
+  class="section"
+  id="services"
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        Guest services
+      </h2>
+
+      <p>
+        We are here to help
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="service-grid">
+
+
+    <button
+      class="service-card"
+      onclick="
+        openServiceModal(
+          'housekeeping'
+        )
+      "
+    >
+
+      <div class="service-icon">
+        ✦
+      </div>
+
+      <strong>
+        Housekeeping
+      </strong>
+
+      <span>
+        Cleaning, towels and room assistance.
+      </span>
+
+    </button>
+
+
+    <button
+      class="service-card"
+      onclick="
+        openServiceModal(
+          'maintenance'
+        )
+      "
+    >
+
+      <div class="service-icon">
+        🔧
+      </div>
+
+      <strong>
+        Maintenance
+      </strong>
+
+      <span>
+        Report a room issue or repair.
+      </span>
+
+    </button>
+
+
+    <button
+      class="service-card"
+      onclick="
+        openServiceModal(
+          'extra_service'
+        )
+      "
+    >
+
+      <div class="service-icon">
+        ✧
+      </div>
+
+      <strong>
+        Extra Service
+      </strong>
+
+      <span>
+        Ask reception for additional services.
+      </span>
+
+    </button>
+
+
+    <button
+      class="service-card"
+      onclick="
+        openServiceModal(
+          'help'
+        )
+      "
+    >
+
+      <div class="service-icon">
+        ?
+      </div>
+
+      <strong>
+        Help
+      </strong>
+
+      <span>
+        Need assistance? Tell reception.
+      </span>
+
+    </button>
+
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     BILL
+============================================================ -->
+
+<section
+  class="section"
+  id="bill"
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <h2>
+        Your bill
+      </h2>
+
+      <p>
+        Current stay balance
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div
+    class="bill"
+    id="guestBill"
+  >
+
+    <div class="empty"
+         style="
+           text-align:center;
+           color:var(--muted);
+           padding:20px;
+           font-size:10px;
+         "
+    >
+      Your bill will appear here
+      when your booking is connected.
+    </div>
+
+  </div>
+
+</section>
+
+
+<!-- ============================================================
+     RECEPTION
+============================================================ -->
+
+<section class="section">
+
+  <div class="card">
+
+    <div class="card-title">
+      Need reception?
+    </div>
+
+    <div class="card-sub">
+      Contact Bluemist reception directly
+      for urgent assistance.
+    </div>
+
+    <div style="height:12px"></div>
+
+    <button
+      class="whatsapp"
+      onclick="contactReception()"
+    >
+      Contact Reception on WhatsApp
+    </button>
+
+  </div>
+
+</section>
+
+
+</main>
+
+
+<!-- FOOTER -->
+
+<footer class="footer">
+
+  <strong>
+    Bluemist Homestay
+  </strong>
+
+  <br>
+
+  Arasinaguppe, Karnataka
+
+  <br>
+
+  Guest Portal
+
+</footer>
+
+
+</section>
+
+
+<!-- ============================================================
+     FOOD MODAL
+============================================================ -->
+
+<div
+  class="modal"
+  id="foodModal"
+>
+
+  <div class="modal-box">
+
+    <div class="modal-head">
+
+      <h2>
+        Request a meal
+      </h2>
+
+      <button
+        class="close"
+        onclick="closeModal('foodModal')"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <form id="foodForm">
+
+      <div class="field">
+
+        <label>
+          Meal
+        </label>
+
+        <select id="foodMeal">
+
+          <option value="breakfast">
+            Breakfast
+          </option>
+
+          <option value="lunch">
+            Lunch
+          </option>
+
+          <option value="evening">
+            Evening
+          </option>
+
+          <option value="dinner">
+            Dinner
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Quantity
+        </label>
+
+        <input
+          id="foodQuantity"
+          type="number"
+          min="1"
+          value="1"
+          required
+        >
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Special request
+        </label>
+
+        <textarea
+          id="foodNote"
+          placeholder="Any special request?"
+        ></textarea>
+
+      </div>
+
+
+      <button
+        class="primary green"
+        type="submit"
+        id="foodButton"
+      >
+        Send Food Request
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- ============================================================
+     SERVICE MODAL
+============================================================ -->
+
+<div
+  class="modal"
+  id="serviceModal"
+>
+
+  <div class="modal-box">
+
+    <div class="modal-head">
+
+      <h2 id="serviceModalTitle">
+        Guest Service
+      </h2>
+
+      <button
+        class="close"
+        onclick="closeModal('serviceModal')"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <form id="serviceForm">
+
+      <input
+        type="hidden"
+        id="serviceType"
+      >
+
+
+      <div class="field">
+
+        <label>
+          What do you need?
+        </label>
+
+        <textarea
+          id="serviceMessage"
+          placeholder="Tell us what you need..."
+          required
+        ></textarea>
+
+      </div>
+
+
+      <div class="field">
+
+        <label>
+          Priority
+        </label>
+
+        <select id="servicePriority">
+
+          <option value="normal">
+            Normal
+          </option>
+
+          <option value="high">
+            High
+          </option>
+
+          <option value="urgent">
+            Urgent
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <button
+        class="primary green"
+        type="submit"
+        id="serviceButton"
+      >
+        Send Request
+      </button>
+
+    </form>
+
+  </div>
+
+</div>
+
+
+<!-- ============================================================
+     HELP MODAL
+============================================================ -->
+
+<div
+  class="modal"
+  id="helpModal"
+>
+
+  <div class="modal-box">
+
+    <div class="modal-head">
+
+      <h2>
+        Need help?
+      </h2>
+
+      <button
+        class="close"
+        onclick="closeModal('helpModal')"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <div class="card"
+         style="
+           box-shadow:none;
+           background:#f7f7f3;
+         "
+    >
+
+      <div class="card-title">
+        Bluemist Reception
+      </div>
+
+      <div class="card-sub">
+        For urgent assistance, contact reception
+        directly.
+      </div>
+
+    </div>
+
+
+    <button
+      class="whatsapp"
+      onclick="contactReception()"
+    >
+      WhatsApp Reception
+    </button>
+
+
+    <div style="height:8px"></div>
+
+
+    <button
+      class="secondary"
+      style="width:100%"
+      onclick="
+        closeModal('helpModal')
+      "
+    >
+      Close
+    </button>
+
+  </div>
+
+</div>
+
+
+<div id="toast"></div>
+
+
+<script>
+
+/* ============================================================
+   SUPABASE
+============================================================ */
+
+const SUPABASE_URL =
+  "https://xyvdkccbuwvxdnjccwxs.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_sobWigI4hKuK8tlU6xVUqA_51a3oNhZ";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+  );
+
+
+/* ============================================================
+   STATE
+============================================================ */
+
+let roomContext = null;
+
+let currentMeal =
+  "breakfast";
+
+let menuData = [];
+
+
+/* ============================================================
+   HELPERS
+============================================================ */
+
+const $ = id =>
+  document.getElementById(id);
+
+
+function escapeHtml(value){
+
+  return String(
+    value ?? ""
+  )
+  .replaceAll("&","&amp;")
+  .replaceAll("<","&lt;")
+  .replaceAll(">","&gt;")
+  .replaceAll('"',"&quot;")
+  .replaceAll("'","&#039;");
+
+}
+
+
+function money(value){
+
+  return new Intl.NumberFormat(
+    "en-IN",
+    {
+      style:"currency",
+      currency:"INR",
+      maximumFractionDigits:0
+    }
+  ).format(
+    Number(value || 0)
+  );
+
+}
+
+
+function toast(message){
+
+  const element =
+    $("toast");
+
+  element.textContent =
+    message;
+
+  element.classList.add(
+    "show"
+  );
+
+  setTimeout(
+    () =>
+      element.classList.remove(
+        "show"
+      ),
+    3000
+  );
+
+}
+
+
+function scrollToSection(id){
+
+  $(id)?.scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+}
+
+
+function closeModal(id){
+
+  $(id)
+    ?.classList
+    .remove("open");
+
+}
+
+
+/* ============================================================
+   QR TOKEN
+============================================================ */
+
+function getQRToken(){
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  /*
+    Primary format:
+
+      guest/?token=QR_TOKEN
+
+    Also supports:
+
+      guest/?qr=QR_TOKEN
+  */
+
+  return (
+    params.get("token") ||
+    params.get("qr") ||
+    ""
+  ).trim();
+
+}
+
+
+/* ============================================================
+   ERROR / LOADING
+============================================================ */
+
+function showError(message){
+
+  $("loadingScreen")
+    .classList
+    .add("hidden");
+
+  $("app")
+    .classList
+    .add("hidden");
+
+  $("errorScreen")
+    .classList
+    .remove("hidden");
+
+
+  $("errorMessage").textContent =
+    message ||
+    "This QR code is invalid or inactive.";
+
+}
+
+
+function showApp(){
+
+  $("loadingScreen")
+    .classList
+    .add("hidden");
+
+  $("errorScreen")
+    .classList
+    .add("hidden");
+
+  $("app")
+    .classList
+    .remove("hidden");
+
+}
+
+
+/* ============================================================
+   LOAD ROOM FROM QR
+============================================================ */
+
+async function loadRoomFromQR(){
+
+  const token =
+    getQRToken();
+
+
+  if(!token){
+
+    showError(
+      "No QR token was found. Please scan the Bluemist room QR code again."
+    );
+
+    return;
+
+  }
+
+
+  try{
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient
+        .rpc(
+          "get_guest_room_by_qr",
+          {
+            p_token:token
+          }
+        );
+
+
+    if(error){
+
+      console.error(
+        "QR lookup error:",
+        error
+      );
+
+      showError(
+        "We could not connect this QR code to a room."
+      );
+
+      return;
+
+    }
+
+
+    if(
+      !data ||
+      !data.length
+    ){
+
+      showError(
+        "This QR code is inactive, invalid, or no longer connected to a room."
+      );
+
+      return;
+
+    }
+
+
+    roomContext =
+      data[0];
+
+
+    renderRoom();
+
+
+    showApp();
+
+
+    await loadMenu();
+
+
+    await loadGuestBill();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    showError(
+      "Something went wrong while opening your guest portal."
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   ROOM UI
+============================================================ */
+
+function renderRoom(){
+
+  if(!roomContext)
+    return;
+
+
+  const number =
+    roomContext.room_number ||
+    "Room";
+
+
+  const name =
+    roomContext.room_name ||
+    `Room ${number}`;
+
+
+  $("heroRoom").textContent =
+    name;
+
+
+  $("heroSubtitle").textContent =
+    "Everything you need during your stay.";
+
+
+  $("heroRoomNumber").textContent =
+    `Room ${number}`;
+
+
+  $("roomName").textContent =
+    name;
+
+
+  $("roomType").textContent =
+    roomContext.room_type ||
+    "Guest room";
+
+
+  $("roomCapacity").textContent =
+    roomContext.capacity
+      ? `${roomContext.capacity} guests`
+      : "—";
+
+
+  $("roomNumberDetail").textContent =
+    number;
+
+
+  $("roomNumberBadge").textContent =
+    `ROOM ${number}`;
+
+
+  $("roomStatus").textContent =
+    "Guest Portal";
+
+}
+
+
+/* ============================================================
+   MENU
+============================================================ */
+
+async function loadMenu(){
+
+  /*
+    We only read active menu items.
+
+    The exact menu table structure can evolve,
+    so the portal handles common field names.
+  */
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("menu_items")
+      .select(
+        "*,menu_categories(name)"
+      )
+      .eq(
+        "is_active",
+        true
+      )
+      .order(
+        "created_at",
+        {
+          ascending:true
+        }
+      );
+
+
+  if(error){
+
+    console.error(
+      "Menu error:",
+      error
+    );
+
+
+    $("menuCard").innerHTML = `
+
+      <div
+        style="
+          padding:18px;
+          text-align:center;
+          color:var(--muted);
+          font-size:10px;
+        "
+      >
+        Today's menu is currently being
+        updated by Bluemist.
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  menuData =
+    data || [];
+
+
+  renderMenu();
+
+}
+
+
+function normaliseMeal(item){
+
+  const category =
+    item.menu_categories
+      ?.name ||
+    item.category ||
+    item.meal_type ||
+    item.meal_period ||
+    "";
+
+
+  return String(
+    category
+  )
+  .toLowerCase()
+  .replaceAll(" ","_");
+
+}
+
+
+function renderMenu(){
+
+  const filtered =
+    menuData.filter(
+      item => {
+
+        const meal =
+          normaliseMeal(item);
+
+
+        if(
+          currentMeal ===
+          "evening"
+        ){
+
+          return (
+            meal.includes(
+              "evening"
+            ) ||
+            meal.includes(
+              "snack"
+            ) ||
+            meal.includes(
+              "tea"
+            )
+          );
+
+        }
+
+
+        return meal.includes(
+          currentMeal
+        );
+
+      }
+    );
+
+
+  /*
+    If the database doesn't store a meal
+    category yet, show all active menu
+    items rather than an empty screen.
+  */
+
+  const items =
+    filtered.length
+      ? filtered
+      : menuData;
+
+
+  $("menuCard").innerHTML =
+    items.length
+
+      ? items.map(
+          item => `
+
+            <div class="menu-item">
+
+              <div class="menu-info">
+
+                <div class="menu-name">
+                  ${escapeHtml(
+                    item.name ||
+                    item.title ||
+                    "Menu Item"
+                  )}
+                </div>
+
+                ${
+                  item.description
+                    ? `
+                      <div class="menu-description">
+                        ${escapeHtml(
+                          item.description
+                        )}
+                      </div>
+                    `
+                    : ""
+                }
+
+              </div>
+
+              ${
+                item.price !== undefined &&
+                item.price !== null
+                  ? `
+                    <div class="menu-price">
+                      ${money(item.price)}
+                    </div>
+                  `
+                  : ""
+              }
+
+            </div>
+
+          `
+        ).join("")
+
+      : `
+
+          <div
+            style="
+              padding:20px;
+              text-align:center;
+              color:var(--muted);
+              font-size:10px;
+            "
+          >
+            No ${escapeHtml(
+              currentMeal
+            )} menu has been added yet.
+          </div>
+
+        `;
+
+}
+
+
+function selectMeal(meal){
+
+  currentMeal =
+    meal;
+
+
+  document
+    .querySelectorAll(
+      ".meal-tab"
+    )
+    .forEach(
+      button => {
+
+        button.classList.toggle(
+          "active",
+          button.dataset.meal === meal
+        );
+
+      }
+    );
+
+
+  renderMenu();
+
+}
+
+
+/* ============================================================
+   CHECK-IN
+============================================================ */
+
+$("checkinForm").addEventListener(
+  "submit",
+  async event => {
+
+    event.preventDefault();
+
+
+    if(!roomContext){
+
+      toast(
+        "Room information is not available."
+      );
+
+      return;
+
+    }
+
+
+    const button =
+      $("checkinButton");
+
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      "Submitting...";
+
+
+    const guest = {
+
+      full_name:
+        $("guestName")
+          .value
+          .trim(),
+
+      phone:
+        $("guestPhone")
+          .value
+          .trim(),
+
+      email:
+        $("guestEmail")
+          .value
+          .trim() ||
+        null,
+
+      id_type:
+        $("guestIdType")
+          .value ||
+        null,
+
+      id_number:
+        $("guestIdNumber")
+          .value
+          .trim() ||
+        null
+
+    };
+
+
+    try{
+
+      /*
+        Create/find the guest profile.
+
+        We intentionally do not create
+        a fake booking here.
+
+        The actual booking remains controlled
+        by Admin/Reception.
+      */
+
+      const {
+        data:existing,
+        error:findError
+      } =
+        await supabaseClient
+          .from("guests")
+          .select("id")
+          .eq(
+            "phone",
+            guest.phone
+          )
+          .limit(1)
+          .maybeSingle();
+
+
+      if(findError){
+
+        throw findError;
+
+      }
+
+
+      let guestId =
+        existing?.id ||
+        null;
+
+
+      if(!guestId){
+
+        const {
+          data:newGuest,
+          error:createError
+        } =
+          await supabaseClient
+            .from("guests")
+            .insert(guest)
+            .select("id")
+            .single();
+
+
+        if(createError){
+
+          throw createError;
+
+        }
+
+
+        guestId =
+          newGuest.id;
+
+      }else{
+
+        /*
+          Update the existing guest with
+          the latest information.
+        */
+
+        const {
+          error:updateError
+        } =
+          await supabaseClient
+            .from("guests")
+            .update({
+              full_name:
+                guest.full_name,
+
+              email:
+                guest.email,
+
+              id_type:
+                guest.id_type,
+
+              id_number:
+                guest.id_number
+            })
+            .eq(
+              "id",
+              guestId
+            );
+
+
+        if(updateError){
+
+          throw updateError;
+
+        }
+
+      }
+
+
+      /*
+        Store the guest ID locally for this
+        portal session.
+
+        This will be used by later modules.
+      */
+
+      localStorage.setItem(
+        "bluemist_guest_id",
+        guestId
+      );
+
+
+      localStorage.setItem(
+        "bluemist_guest_name",
+        guest.full_name
+      );
+
+
+      toast(
+        "Guest details submitted successfully."
+      );
+
+
+      button.textContent =
+        "Details Submitted ✓";
+
+
+      button.disabled =
+        true;
+
+
+    }catch(error){
+
+      console.error(
+        "Guest submission:",
+        error
+      );
+
+
+      toast(
+        "Unable to save guest details: " +
+        error.message
+      );
+
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "Submit Check-in Details";
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   SERVICE REQUEST
+============================================================ */
+
+const serviceTitles = {
+
+  housekeeping:
+    "Housekeeping Request",
+
+  maintenance:
+    "Maintenance Request",
+
+  extra_service:
+    "Extra Service Request",
+
+  help:
+    "Help Request"
+
+};
+
+
+function openServiceModal(type){
+
+  $("serviceType").value =
+    type;
+
+
+  $("serviceModalTitle").textContent =
+    serviceTitles[type] ||
+    "Guest Service";
+
+
+  $("serviceMessage").value =
+    "";
+
+
+  $("servicePriority").value =
+    type === "help"
+      ? "high"
+      : "normal";
+
+
+  $("serviceModal")
+    .classList
+    .add("open");
+
+}
+
+
+$("serviceForm").addEventListener(
+  "submit",
+  async event => {
+
+    event.preventDefault();
+
+
+    if(!roomContext){
+
+      toast(
+        "Room information is unavailable."
+      );
+
+      return;
+
+    }
+
+
+    const button =
+      $("serviceButton");
+
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      "Sending...";
+
+
+    const type =
+      $("serviceType")
+        .value;
+
+
+    const message =
+      $("serviceMessage")
+        .value
+        .trim();
+
+
+    const priority =
+      $("servicePriority")
+        .value;
+
+
+    const requestNumber =
+      "SR-" +
+      Date.now()
+        .toString()
+        .slice(-9);
+
+
+    try{
+
+      /*
+        This uses the fields already used by
+        the Bluemist Admin service module:
+
+        request_number
+        title
+        type
+        priority
+        room_id
+        status
+
+        If your service_requests table has
+        additional required columns, Supabase
+        will return the exact database error.
+      */
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("service_requests")
+          .insert({
+
+            request_number:
+              requestNumber,
+
+            title:
+              serviceTitles[type] ||
+              "Guest Service Request",
+
+            type:
+              type,
+
+            priority:
+              priority,
+
+            room_id:
+              roomContext.room_id,
+
+            status:
+              "new",
+
+            description:
+              message
+
+          });
+
+
+      if(error){
+
+        throw error;
+
+      }
+
+
+      closeModal(
+        "serviceModal"
+      );
+
+
+      $("serviceMessage").value =
+        "";
+
+
+      toast(
+        "Request sent to Bluemist staff."
+      );
+
+
+    }catch(error){
+
+      console.error(
+        "Service request:",
+        error
+      );
+
+
+      toast(
+        "Unable to send request: " +
+        error.message
+      );
+
+    }finally{
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "Send Request";
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   FOOD REQUEST
+============================================================ */
+
+function openFoodModal(){
+
+  $("foodMeal").value =
+    currentMeal;
+
+
+  $("foodModal")
+    .classList
+    .add("open");
+
+}
+
+
+$("foodForm").addEventListener(
+  "submit",
+  async event => {
+
+    event.preventDefault();
+
+
+    if(!roomContext){
+
+      toast(
+        "Room information is unavailable."
+      );
+
+      return;
+
+    }
+
+
+    const button =
+      $("foodButton");
+
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      "Sending...";
+
+
+    const meal =
+      $("foodMeal").value;
+
+
+    const quantity =
+      Number(
+        $("foodQuantity").value
+      );
+
+
+    const note =
+      $("foodNote")
+        .value
+        .trim();
+
+
+    const orderNumber =
+      "FO-" +
+      Date.now()
+        .toString()
+        .slice(-9);
+
+
+    try{
+
+      /*
+        Food orders are sent to the
+        existing food_orders table.
+
+        The exact kitchen workflow remains
+        controlled by Admin/Kitchen.
+      */
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("food_orders")
+          .insert({
+
+            order_number:
+              orderNumber,
+
+            room_id:
+              roomContext.room_id,
+
+            meal_period:
+              meal,
+
+            quantity:
+              quantity,
+
+            notes:
+              note || null,
+
+            status:
+              "new",
+
+            total_amount:
+              0
+
+          });
+
+
+      if(error){
+
+        throw error;
+
+      }
+
+
+      closeModal(
+        "foodModal"
+      );
+
+
+      $("foodNote").value =
+        "";
+
+
+      $("foodQuantity").value =
+        1;
+
+
+      toast(
+        "Meal request sent to the kitchen."
+      );
+
+
+    }catch(error){
+
+      console.error(
+        "Food request:",
+        error
+      );
+
+
+      toast(
+        "Unable to send food request: " +
+        error.message
+      );
+
+    }finally{
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        "Send Food Request";
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   GUEST BILL
+============================================================ */
+
+async function loadGuestBill(){
+
+  /*
+    A public QR portal should NOT expose
+    another guest's booking information.
+
+    Therefore the bill only loads after
+    this browser has a guest ID stored from
+    the check-in form.
+
+    Booking linkage will be expanded when
+    the guest/stay portal is connected to
+    the active stay.
+  */
+
+  const guestId =
+    localStorage.getItem(
+      "bluemist_guest_id"
+    );
+
+
+  if(!guestId){
+
+    renderGuestBillUnavailable();
+
+    return;
+
+  }
+
+
+  try{
+
+    const {
+      data:guest,
+      error:guestError
+    } =
+      await supabaseClient
+        .from("guests")
+        .select(
+          "id,full_name,phone"
+        )
+        .eq(
+          "id",
+          guestId
+        )
+        .single();
+
+
+    if(guestError){
+
+      throw guestError;
+
+    }
+
+
+    /*
+      We deliberately do not guess a booking
+      relationship here.
+
+      The booking/stay relationship should be
+      connected to the actual active stay in
+      the next hospitality workflow layer.
+    */
+
+    renderGuestBillPending(
+      guest
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "Guest bill:",
+      error
+    );
+
+    renderGuestBillUnavailable();
+
+  }
+
+}
+
+
+function renderGuestBillPending(
+  guest
+){
+
+  $("guestBill").innerHTML = `
+
+    <div class="bill-header">
+
+      <div>
+
+        <div class="bill-brand">
+          Bluemist
+        </div>
+
+        <div class="bill-small">
+          Guest Folio
+        </div>
+
+      </div>
+
+      <div class="bill-number">
+        Guest
+        <br>
+        ${escapeHtml(
+          guest?.full_name ||
+          "Guest"
+        )}
+      </div>
+
+    </div>
+
+
+    <div
+      style="
+        padding:20px 5px;
+        text-align:center;
+        color:var(--muted);
+        font-size:10px;
+        line-height:1.7;
+      "
+    >
+
+      Your guest details have been
+      received.
+
+      <br>
+
+      Your active booking balance will
+      appear here once Reception connects
+      your stay.
+
+    </div>
+
+  `;
+
+}
+
+
+function renderGuestBillUnavailable(){
+
+  $("guestBill").innerHTML = `
+
+    <div
+      style="
+        padding:20px 5px;
+        text-align:center;
+        color:var(--muted);
+        font-size:10px;
+        line-height:1.7;
+      "
+    >
+
+      Your current bill will appear here
+      after your stay is connected.
+
+      <br><br>
+
+      For billing questions,
+      contact Bluemist reception.
+
+    </div>
+
+  `;
+
+}
+
+
+/* ============================================================
+   RECEPTION
+============================================================ */
+
+async function loadBusinessSettings(){
+
+  try{
+
+    const {
+      data
+    } =
+      await supabaseClient
+        .from("business_settings")
+        .select(
+          "phone,whatsapp,business_name"
+        )
+        .limit(1)
+        .maybeSingle();
+
+
+    if(data){
+
+      window.bluemistSettings =
+        data;
+
+    }
+
+  }catch(error){
+
+    console.warn(
+      "Business settings:",
+      error
+    );
+
+  }
+
+}
+
+
+function contactReception(){
+
+  const settings =
+    window.bluemistSettings ||
+    {};
+
+
+  let phone =
+    settings.whatsapp ||
+    settings.phone ||
+    "";
+
+
+  phone =
+    String(phone)
+      .replace(
+        /\D/g,
+        ""
+      );
+
+
+  /*
+    Fallback to India's country code if
+    a 10-digit local number is stored.
+  */
+
+  if(
+    phone.length === 10
+  ){
+
+    phone =
+      "91" +
+      phone;
+
+  }
+
+
+  if(!phone){
+
+    toast(
+      "Reception WhatsApp number is not configured yet."
+    );
+
+    return;
+
+  }
+
+
+  const room =
+    roomContext
+      ?.room_number ||
+    "Guest";
+
+
+  const name =
+    localStorage.getItem(
+      "bluemist_guest_name"
+    ) ||
+    "Guest";
+
+
+  const message =
+    `Hello Bluemist Reception,\n\n` +
+
+    `I am staying in Room ${
+      room
+    }.\n` +
+
+    `Guest: ${
+      name
+    }\n\n` +
+
+    `I need assistance.`;
+
+
+  window.open(
+
+    `https://wa.me/${
+      phone
+    }?text=${
+      encodeURIComponent(
+        message
+      )
+    }`,
+
+    "_blank"
+
+  );
+
+}
+
+
+/* ============================================================
+   HELP MODAL
+============================================================ */
+
+function openHelpModal(){
+
+  $("helpModal")
+    .classList
+    .add("open");
+
+}
+
+
+/* ============================================================
+   CLOSE MODAL ON BACKDROP
+============================================================ */
+
+document
+  .querySelectorAll(".modal")
+  .forEach(
+    modal => {
+
+      modal.addEventListener(
+        "click",
+        event => {
+
+          if(
+            event.target ===
+            modal
+          ){
+
+            modal.classList.remove(
+              "open"
+            );
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+/* ============================================================
+   START
+============================================================ */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  async () => {
+
+    await loadBusinessSettings();
+
+    await loadRoomFromQR();
+
+  }
+);
+
+</script>
+
+</body>
+</html>
