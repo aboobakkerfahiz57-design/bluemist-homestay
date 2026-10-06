@@ -1,1 +1,2186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <title>Bluemist Homestay | A Stay Above the Ordinary</title>
+  <meta
+    name="description"
+    content="Bluemist Homestay — a peaceful nature retreat in Arasinaguppe, Karnataka."
+  />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --green: #173c32;
+      --green-2: #245547;
+      --cream: #f5f1e8;
+      --white: #ffffff;
+      --gold: #c9a45c;
+      --dark: #101714;
+      --text: #24312c;
+      --muted: #718078;
+      --border: rgba(23, 60, 50, 0.14);
+      --shadow: 0 20px 60px rgba(16, 23, 20, 0.12);
+      --radius: 22px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      color: var(--text);
+      background: var(--cream);
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    /* =========================
+       NAVIGATION
+    ========================== */
+
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      padding: 18px 5%;
+      transition: 0.35s ease;
+    }
+
+    .navbar.scrolled {
+      background: rgba(16, 23, 20, 0.92);
+      backdrop-filter: blur(18px);
+      padding: 12px 5%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+
+    .nav-inner {
+      max-width: 1400px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      width: 74px;
+      height: 74px;
+      object-fit: contain;
+      filter: drop-shadow(0 5px 12px rgba(0,0,0,.25));
+      transition: .3s ease;
+    }
+
+    .navbar.scrolled .nav-logo {
+      width: 58px;
+      height: 58px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 34px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .nav-links a {
+      position: relative;
+      opacity: .92;
+    }
+
+    .nav-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -7px;
+      width: 0;
+      height: 1px;
+      background: var(--gold);
+      transition: .3s;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-book {
+      border: 1px solid rgba(255,255,255,.45);
+      color: white;
+      background: rgba(255,255,255,.08);
+      padding: 12px 19px;
+      border-radius: 50px;
+      transition: .3s;
+    }
+
+    .nav-book:hover {
+      background: white;
+      color: var(--green);
+    }
+
+    .menu-btn {
+      display: none;
+      border: 0;
+      background: transparent;
+      color: white;
+      font-size: 28px;
+    }
+
+    /* =========================
+       HERO
+    ========================== */
+
+    .hero {
+      min-height: 100vh;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      color: white;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(0,0,0,.15) 0%,
+          rgba(0,0,0,.15) 30%,
+          rgba(8,19,15,.55) 70%,
+          rgba(8,19,15,.92) 100%
+        ),
+        url("bluemist-homepage-bg.png") center center / cover no-repeat;
+    }
+
+    .hero-content {
+      width: 100%;
+      max-width: 1400px;
+      margin: auto;
+      padding: 160px 5% 90px;
+    }
+
+    .hero-small {
+      text-transform: uppercase;
+      letter-spacing: 5px;
+      font-size: 11px;
+      color: #e5d8bd;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .hero h1 {
+      font-family: "Playfair Display", serif;
+      font-size: clamp(52px, 8vw, 105px);
+      line-height: .94;
+      font-weight: 500;
+      max-width: 900px;
+      letter-spacing: -3px;
+    }
+
+    .hero h1 span {
+      color: #e6d1a5;
+      font-style: italic;
+    }
+
+    .hero-description {
+      max-width: 530px;
+      margin-top: 28px;
+      color: rgba(255,255,255,.82);
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      margin-top: 35px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 50px;
+      padding: 15px 24px;
+      font-weight: 600;
+      transition: .3s;
+    }
+
+    .btn-primary {
+      background: white;
+      color: var(--green);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(0,0,0,.2);
+    }
+
+    .btn-outline {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.4);
+      color: white;
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-outline:hover {
+      background: white;
+      color: var(--green);
+    }
+
+    .hero-bottom {
+      margin-top: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      max-width: 800px;
+    }
+
+    .hero-stat {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: rgba(255,255,255,.85);
+      font-size: 13px;
+    }
+
+    .hero-stat strong {
+      font-size: 19px;
+      color: white;
+    }
+
+    .hero-scroll {
+      position: absolute;
+      right: 5%;
+      bottom: 45px;
+      writing-mode: vertical-rl;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-size: 10px;
+      color: rgba(255,255,255,.65);
+    }
+
+    /* =========================
+       COMMON
+    ========================== */
+
+    section {
+      padding: 110px 5%;
+    }
+
+    .section-inner {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .eyebrow {
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: "Playfair Display", serif;
+      color: var(--green);
+      font-size: clamp(40px, 5vw, 65px);
+      line-height: 1;
+      font-weight: 500;
+    }
+
+    .section-text {
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 600px;
+      margin-top: 20px;
+    }
+
+    /* =========================
+       INTRO
+    ========================== */
+
+    .intro {
+      background: var(--cream);
+    }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .intro-image {
+      height: 560px;
+      border-radius: 30px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow);
+      background:
+        linear-gradient(rgba(0,0,0,.08), rgba(0,0,0,.08)),
+        url("bluemist-homepage-bg.png") center / cover;
+    }
+
+    .intro-card {
+      position: absolute;
+      bottom: 25px;
+      left: 25px;
+      right: 25px;
+      padding: 22px;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(15px);
+      border-radius: 18px;
+      color: var(--green);
+    }
+
+    .intro-card strong {
+      display: block;
+      font-family: "Playfair Display", serif;
+      font-size: 25px;
+      margin-bottom: 5px;
+    }
+
+    /* =========================
+       EXPERIENCE
+    ========================== */
+
+    .experience {
+      background: white;
+    }
+
+    .experience-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 30px;
+      margin-bottom: 50px;
+    }
+
+    .experience-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .experience-card {
+      padding: 35px 25px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: white;
+      transition: .35s;
+    }
+
+    .experience-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow);
+    }
+
+    .experience-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--cream);
+      display: grid;
+      place-items: center;
+      margin-bottom: 25px;
+      font-size: 21px;
+    }
+
+    .experience-card h3 {
+      font-family: "Playfair Display", serif;
+      color: var(--green);
+      font-size: 23px;
+      margin-bottom: 12px;
+    }
+
+    .experience-card p {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    /* =========================
+       ROOMS
+    ========================== */
+
+    .rooms {
+      background: #eae5d9;
+    }
+
+    .rooms-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 45px;
+    }
+
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .room-card {
+      background: white;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 10px 35px rgba(0,0,0,.06);
+    }
+
+    .room-image {
+      height: 270px;
+      position: relative;
+      background:
+        linear-gradient(135deg, #284e42, #9aaf9e);
+      overflow: hidden;
+    }
+
+    .room-image::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 75% 30%, rgba(255,255,255,.3), transparent 25%),
+        linear-gradient(135deg, rgba(0,0,0,.05), rgba(0,0,0,.35));
+    }
+
+    .room-number {
+      position: absolute;
+      z-index: 2;
+      top: 20px;
+      left: 20px;
+      background: rgba(255,255,255,.9);
+      color: var(--green);
+      padding: 8px 13px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .room-content {
+      padding: 25px;
+    }
+
+    .room-content h3 {
+      font-family: "Playfair Display", serif;
+      color: var(--green);
+      font-size: 27px;
+    }
+
+    .room-content p {
+      color: var(--muted);
+      margin: 10px 0 20px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .room-meta {
+      display: flex;
+      justify-content: space-between;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* =========================
+       BOOKING
+    ========================== */
+
+    .booking {
+      background: var(--green);
+      color: white;
+    }
+
+    .booking-grid {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .booking .section-title {
+      color: white;
+    }
+
+    .booking .section-text {
+      color: rgba(255,255,255,.7);
+    }
+
+    .booking-points {
+      margin-top: 30px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .booking-point {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: rgba(255,255,255,.8);
+      font-size: 14px;
+    }
+
+    .booking-form {
+      background: white;
+      color: var(--text);
+      padding: 35px;
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-title {
+      font-family: "Playfair Display", serif;
+      color: var(--green);
+      font-size: 30px;
+      margin-bottom: 25px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #d9dfda;
+      border-radius: 12px;
+      outline: none;
+      background: #fbfcfa;
+      color: var(--text);
+    }
+
+    .field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(23,60,50,.08);
+    }
+
+    .form-submit {
+      width: 100%;
+      margin-top: 18px;
+      background: var(--green);
+      color: white;
+      padding: 16px;
+    }
+
+    .form-submit:hover {
+      background: var(--green-2);
+    }
+
+    /* =========================
+       LOCATION
+    ========================== */
+
+    .location {
+      background: var(--cream);
+    }
+
+    .location-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 500px;
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .location-info {
+      background: white;
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .location-info h2 {
+      font-family: "Playfair Display", serif;
+      font-size: 48px;
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    .address {
+      margin-top: 25px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .location-map {
+      background:
+        linear-gradient(rgba(23,60,50,.25), rgba(23,60,50,.25)),
+        url("bluemist-homepage-bg.png") center / cover;
+      display: grid;
+      place-items: center;
+    }
+
+    .map-button {
+      background: white;
+      color: var(--green);
+      padding: 15px 22px;
+      border-radius: 50px;
+      font-weight: 700;
+      box-shadow: 0 15px 40px rgba(0,0,0,.2);
+    }
+
+    /* =========================
+       CTA
+    ========================== */
+
+    .cta {
+      background: #111d18;
+      color: white;
+      text-align: center;
+      padding: 120px 5%;
+    }
+
+    .cta h2 {
+      font-family: "Playfair Display", serif;
+      font-size: clamp(45px, 6vw, 80px);
+      font-weight: 500;
+      line-height: 1;
+      max-width: 850px;
+      margin: auto;
+    }
+
+    .cta p {
+      max-width: 550px;
+      margin: 25px auto 35px;
+      color: rgba(255,255,255,.65);
+      line-height: 1.8;
+    }
+
+    /* =========================
+       FOOTER
+    ========================== */
+
+    footer {
+      background: #0b120f;
+      color: white;
+      padding: 60px 5% 25px;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 50px;
+    }
+
+    .footer-logo {
+      width: 85px;
+      margin-bottom: 20px;
+    }
+
+    .footer-brand p {
+      max-width: 350px;
+      color: rgba(255,255,255,.5);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .footer-col h4 {
+      margin-bottom: 18px;
+      color: white;
+    }
+
+    .footer-col a {
+      display: block;
+      color: rgba(255,255,255,.55);
+      margin-bottom: 11px;
+      font-size: 14px;
+      transition: .2s;
+    }
+
+    .footer-col a:hover {
+      color: white;
+    }
+
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 50px auto 0;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      color: rgba(255,255,255,.4);
+      font-size: 12px;
+    }
+
+    /* =========================
+       FLOATING WHATSAPP
+    ========================== */
+
+    .whatsapp {
+      position: fixed;
+      z-index: 999;
+      right: 24px;
+      bottom: 24px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #1fbd68;
+      color: white;
+      font-size: 25px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+      transition: .3s;
+    }
+
+    .whatsapp:hover {
+      transform: scale(1.08);
+    }
+
+    /* =========================
+       MODAL
+    ========================== */
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(5,12,9,.7);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-box {
+      width: min(600px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 25px;
+      padding: 35px;
+      position: relative;
+      animation: modalIn .3s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .close-modal {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      border: 0;
+      background: #eef1ed;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      color: var(--green);
+      font-size: 20px;
+    }
+
+    .success-message {
+      display: none;
+      padding: 25px;
+      background: #edf8f1;
+      border-radius: 16px;
+      color: #195a36;
+      margin-top: 20px;
+      line-height: 1.7;
+    }
+
+    /* =========================
+       MOBILE
+    ========================== */
+
+    @media (max-width: 950px) {
+      .nav-links {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 80%;
+        max-width: 360px;
+        height: 100vh;
+        background: #10241d;
+        flex-direction: column;
+        justify-content: center;
+        gap: 28px;
+        transition: .4s;
+        box-shadow: -20px 0 50px rgba(0,0,0,.2);
+      }
+
+      .nav-links.active {
+        right: 0;
+      }
+
+      .menu-btn {
+        display: block;
+        position: relative;
+        z-index: 1100;
+      }
+
+      .intro-grid,
+      .booking-grid,
+      .location-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .experience-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .rooms-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hero-scroll {
+        display: none;
+      }
+    }
+
+    @media (max-width: 650px) {
+      section {
+        padding: 80px 5%;
+      }
+
+      .hero-content {
+        padding: 150px 5% 70px;
+      }
+
+      .hero h1 {
+        font-size: 54px;
+        letter-spacing: -2px;
+      }
+
+      .hero-bottom {
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .experience-head,
+      .rooms-head {
+        display: block;
+      }
+
+      .experience-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .intro-image {
+        height: 430px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field.full {
+        grid-column: auto;
+      }
+
+      .booking-form {
+        padding: 25px;
+      }
+
+      .location-info {
+        padding: 40px 28px;
+      }
+
+      .location-info h2 {
+        font-size: 38px;
+      }
+
+      .location-map {
+        min-height: 350px;
+      }
+
+      .footer-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =========================
+       NAVIGATION
+  ========================== -->
+
+  <header class="navbar" id="navbar">
+    <div class="nav-inner">
+
+      <a href="#home">
+        <img
+          src="bluemist-logo.png"
+          alt="Bluemist Homestay"
+          class="nav-logo"
+        />
+      </a>
+
+      <nav class="nav-links" id="navLinks">
+        <a href="#home">Home</a>
+        <a href="#stay">Stay</a>
+        <a href="#experience">Experience</a>
+        <a href="#location">Location</a>
+        <a href="#contact">Contact</a>
+
+        <button
+          class="nav-book"
+          onclick="openInquiry()"
+        >
+          Make an Inquiry
+        </button>
+      </nav>
+
+      <button
+        class="menu-btn"
+        id="menuBtn"
+        aria-label="Open menu"
+      >
+        ☰
+      </button>
+
+    </div>
+  </header>
+
+
+  <!-- =========================
+       HERO
+  ========================== -->
+
+  <main>
+
+    <section class="hero" id="home">
+
+      <div class="hero-content">
+
+        <div class="hero-small">
+          Arasinaguppe · Karnataka
+        </div>
+
+        <h1>
+          Stay close to
+          <span>nature.</span>
+        </h1>
+
+        <p class="hero-description">
+          A peaceful homestay surrounded by mist, mountains and
+          the quiet beauty of Karnataka. Come for the stay.
+          Leave with the memories.
+        </p>
+
+        <div class="hero-actions">
+
+          <button
+            class="btn btn-primary"
+            onclick="openInquiry()"
+          >
+            Check Availability
+          </button>
+
+          <a
+            href="#experience"
+            class="btn btn-outline"
+          >
+            Explore Bluemist
+          </a>
+
+        </div>
+
+        <div class="hero-bottom">
+
+          <div class="hero-stat">
+            <strong>4.6</strong>
+            <span>Guest rating · 296 reviews</span>
+          </div>
+
+          <div class="hero-stat">
+            <strong>24/7</strong>
+            <span>Guest assistance</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="hero-scroll">
+        Scroll to explore ↓
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         INTRO
+    ========================== -->
+
+    <section class="intro">
+
+      <div class="section-inner intro-grid">
+
+        <div class="intro-image">
+
+          <div class="intro-card">
+            <strong>A slower kind of luxury.</strong>
+            <span>
+              Fresh air. Quiet mornings. Warm hospitality.
+            </span>
+          </div>
+
+        </div>
+
+        <div>
+
+          <div class="eyebrow">
+            Welcome to Bluemist
+          </div>
+
+          <h2 class="section-title">
+            Your peaceful escape begins here.
+          </h2>
+
+          <p class="section-text">
+            Bluemist Homestay is designed for people who want
+            to step away from the noise and reconnect with
+            nature, comfort and themselves.
+          </p>
+
+          <p class="section-text">
+            Whether you are planning a family stay, a weekend
+            escape or simply a quiet break, Bluemist gives you
+            a place to slow down and breathe.
+          </p>
+
+          <button
+            class="btn"
+            style="margin-top:30px;background:var(--green);color:white;"
+            onclick="openInquiry()"
+          >
+            Plan Your Stay →
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         EXPERIENCE
+    ========================== -->
+
+    <section class="experience" id="experience">
+
+      <div class="section-inner">
+
+        <div class="experience-head">
+
+          <div>
+            <div class="eyebrow">
+              The Bluemist experience
+            </div>
+
+            <h2 class="section-title">
+              Everything you need.
+            </h2>
+          </div>
+
+          <p class="section-text">
+            Designed around comfort, nature and simple moments
+            that stay with you.
+          </p>
+
+        </div>
+
+
+        <div class="experience-grid">
+
+          <div class="experience-card">
+            <div class="experience-icon">🌿</div>
+            <h3>Nature</h3>
+            <p>
+              Wake up surrounded by greenery, fresh air and
+              beautiful landscapes.
+            </p>
+          </div>
+
+          <div class="experience-card">
+            <div class="experience-icon">🛏️</div>
+            <h3>Comfort</h3>
+            <p>
+              Thoughtfully prepared spaces created for a
+              relaxed and comfortable stay.
+            </p>
+          </div>
+
+          <div class="experience-card">
+            <div class="experience-icon">🍽️</div>
+            <h3>Food</h3>
+            <p>
+              Enjoy delicious meals and convenient food
+              service during your stay.
+            </p>
+          </div>
+
+          <div class="experience-card">
+            <div class="experience-icon">🤝</div>
+            <h3>Hospitality</h3>
+            <p>
+              Friendly assistance whenever you need it,
+              from arrival to checkout.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         ROOMS
+    ========================== -->
+
+    <section class="rooms" id="stay">
+
+      <div class="section-inner">
+
+        <div class="rooms-head">
+
+          <div>
+            <div class="eyebrow">
+              Stay with us
+            </div>
+
+            <h2 class="section-title">
+              Spaces to unwind.
+            </h2>
+          </div>
+
+          <p class="section-text">
+            Comfortable rooms surrounded by the calm of nature.
+          </p>
+
+        </div>
+
+
+        <div class="rooms-grid">
+
+          <article class="room-card">
+
+            <div class="room-image">
+              <span class="room-number">
+                ROOM 01
+              </span>
+            </div>
+
+            <div class="room-content">
+
+              <h3>Garden Retreat</h3>
+
+              <p>
+                A peaceful room with a relaxed atmosphere,
+                ideal for couples and solo travellers.
+              </p>
+
+              <div class="room-meta">
+                <span>2 Guests</span>
+                <span>Enquire →</span>
+              </div>
+
+            </div>
+
+          </article>
+
+
+          <article class="room-card">
+
+            <div
+              class="room-image"
+              style="background:linear-gradient(135deg,#536f66,#c7bfa6);"
+            >
+              <span class="room-number">
+                ROOM 02
+              </span>
+            </div>
+
+            <div class="room-content">
+
+              <h3>Mountain View</h3>
+
+              <p>
+                Wake up to beautiful views and the peaceful
+                sounds of the surrounding landscape.
+              </p>
+
+              <div class="room-meta">
+                <span>3 Guests</span>
+                <span>Enquire →</span>
+              </div>
+
+            </div>
+
+          </article>
+
+
+          <article class="room-card">
+
+            <div
+              class="room-image"
+              style="background:linear-gradient(135deg,#263d35,#a88e68);"
+            >
+              <span class="room-number">
+                ROOM 03
+              </span>
+            </div>
+
+            <div class="room-content">
+
+              <h3>Family Escape</h3>
+
+              <p>
+                Spacious accommodation for families and groups
+                looking for a comfortable getaway.
+              </p>
+
+              <div class="room-meta">
+                <span>4 Guests</span>
+                <span>Enquire →</span>
+              </div>
+
+            </div>
+
+          </article>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         BOOKING / INQUIRY
+    ========================== -->
+
+    <section class="booking" id="booking">
+
+      <div class="section-inner booking-grid">
+
+        <div>
+
+          <div class="eyebrow">
+            Plan your stay
+          </div>
+
+          <h2 class="section-title">
+            Tell us when you want to escape.
+          </h2>
+
+          <p class="section-text">
+            Send an inquiry and our team will get back to
+            you with availability and stay details.
+          </p>
+
+          <div class="booking-points">
+
+            <div class="booking-point">
+              ✓ Quick response
+            </div>
+
+            <div class="booking-point">
+              ✓ Flexible stay assistance
+            </div>
+
+            <div class="booking-point">
+              ✓ Direct support from Bluemist
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="booking-form">
+
+          <div class="form-title">
+            Check Availability
+          </div>
+
+          <form id="availabilityForm">
+
+            <div class="form-grid">
+
+              <div class="field">
+                <label>Check-in</label>
+                <input
+                  type="date"
+                  id="checkin"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label>Check-out</label>
+                <input
+                  type="date"
+                  id="checkout"
+                  required
+                />
+              </div>
+
+              <div class="field">
+                <label>Guests</label>
+
+                <select id="guests" required>
+                  <option value="">Select</option>
+                  <option>1 Guest</option>
+                  <option>2 Guests</option>
+                  <option>3 Guests</option>
+                  <option>4 Guests</option>
+                  <option>5+ Guests</option>
+                </select>
+
+              </div>
+
+              <div class="field">
+                <label>Room</label>
+
+                <select id="room">
+                  <option>Any Room</option>
+                  <option>Garden Retreat</option>
+                  <option>Mountain View</option>
+                  <option>Family Escape</option>
+                </select>
+
+              </div>
+
+              <div class="field full">
+                <label>Your Name</label>
+
+                <input
+                  type="text"
+                  id="guestName"
+                  placeholder="Enter your name"
+                  required
+                />
+
+              </div>
+
+              <div class="field full">
+                <label>Phone Number</label>
+
+                <input
+                  type="tel"
+                  id="phone"
+                  placeholder="+91 XXXXX XXXXX"
+                  required
+                />
+
+              </div>
+
+              <div class="field full">
+                <label>Message</label>
+
+                <textarea
+                  id="message"
+                  placeholder="Any special request?"
+                ></textarea>
+
+              </div>
+
+            </div>
+
+            <button
+              type="submit"
+              class="btn form-submit"
+            >
+              Send Inquiry →
+            </button>
+
+          </form>
+
+          <div
+            class="success-message"
+            id="successMessage"
+          >
+            <strong>Inquiry received ✓</strong><br>
+            Thank you. Your stay request has been prepared.
+            Our Bluemist team will contact you shortly.
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         LOCATION
+    ========================== -->
+
+    <section class="location" id="location">
+
+      <div class="section-inner">
+
+        <div class="location-grid">
+
+          <div class="location-info">
+
+            <div class="eyebrow">
+              Find Bluemist
+            </div>
+
+            <h2>
+              Away from the noise.
+            </h2>
+
+            <p class="address">
+              Bus Stop, Via Hosa Road,<br>
+              Mavinalla Post,<br>
+              Arasinaguppe, Karnataka 577101
+            </p>
+
+            <a
+              class="btn"
+              style="margin-top:30px;background:var(--green);color:white;width:max-content;"
+              href="https://www.google.com/maps/search/?api=1&query=Bluemist+Homestay+Arasinaguppe+Karnataka"
+              target="_blank"
+              rel="noopener"
+            >
+              Get Directions →
+            </a>
+
+          </div>
+
+          <div class="location-map">
+
+            <a
+              class="map-button"
+              href="https://www.google.com/maps/search/?api=1&query=Bluemist+Homestay+Arasinaguppe+Karnataka"
+              target="_blank"
+              rel="noopener"
+            >
+              Open Google Maps
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         CTA
+    ========================== -->
+
+    <section class="cta" id="contact">
+
+      <h2>
+        Your next peaceful stay starts here.
+      </h2>
+
+      <p>
+        Come for the mountains. Stay for the experience.
+        Let Bluemist take care of the rest.
+      </p>
+
+      <button
+        class="btn btn-primary"
+        onclick="openInquiry()"
+      >
+        Make an Inquiry
+      </button>
+
+    </section>
+
+  </main>
+
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
+
+  <footer>
+
+    <div class="footer-inner">
+
+      <div class="footer-brand">
+
+        <img
+          src="bluemist-logo.png"
+          alt="Bluemist"
+          class="footer-logo"
+        />
+
+        <p>
+          A peaceful homestay experience surrounded by nature
+          in Arasinaguppe, Karnataka.
+        </p>
+
+      </div>
+
+
+      <div class="footer-col">
+
+        <h4>Explore</h4>
+
+        <a href="#home">Home</a>
+        <a href="#stay">Stay</a>
+        <a href="#experience">Experience</a>
+        <a href="#location">Location</a>
+
+      </div>
+
+
+      <div class="footer-col">
+
+        <h4>Connect</h4>
+
+        <a href="tel:+919000000000">
+          +91 XXXXX XXXXX
+        </a>
+
+        <a href="https://wa.me/919000000000" target="_blank">
+          WhatsApp
+        </a>
+
+        <a href="#booking">
+          Make an Inquiry
+        </a>
+
+      </div>
+
+    </div>
+
+
+    <div class="footer-bottom">
+
+      <span>
+        © <span id="year"></span> Bluemist Homestay.
+        All rights reserved.
+      </span>
+
+      <span>
+        Premium Hospitality Experience
+      </span>
+
+    </div>
+
+  </footer>
+
+
+  <!-- =========================
+       WHATSAPP
+  ========================== -->
+
+  <a
+    class="whatsapp"
+    href="https://wa.me/919000000000?text=Hello%20Bluemist%20Homestay%2C%20I%20would%20like%20to%20make%20an%20inquiry."
+    target="_blank"
+    rel="noopener"
+    aria-label="WhatsApp Bluemist"
+  >
+    ☎
+  </a>
+
+
+  <!-- =========================
+       INQUIRY MODAL
+  ========================== -->
+
+  <div
+    class="modal"
+    id="inquiryModal"
+  >
+
+    <div class="modal-box">
+
+      <button
+        class="close-modal"
+        onclick="closeInquiry()"
+      >
+        ×
+      </button>
+
+      <div class="eyebrow">
+        Bluemist Homestay
+      </div>
+
+      <h2
+        class="section-title"
+        style="font-size:42px;"
+      >
+        Make an Inquiry
+      </h2>
+
+      <p
+        class="section-text"
+        style="margin-bottom:25px;"
+      >
+        Tell us a little about your stay and our team
+        will contact you.
+      </p>
+
+      <form id="inquiryForm">
+
+        <div class="form-grid">
+
+          <div class="field full">
+            <label>Name</label>
+
+            <input
+              type="text"
+              id="inqName"
+              required
+              placeholder="Your full name"
+            />
+
+          </div>
+
+          <div class="field">
+            <label>Phone</label>
+
+            <input
+              type="tel"
+              id="inqPhone"
+              required
+              placeholder="+91 XXXXX XXXXX"
+            />
+
+          </div>
+
+          <div class="field">
+            <label>Guests</label>
+
+            <select id="inqGuests">
+              <option>1 Guest</option>
+              <option selected>2 Guests</option>
+              <option>3 Guests</option>
+              <option>4 Guests</option>
+              <option>5+ Guests</option>
+            </select>
+
+          </div>
+
+          <div class="field">
+            <label>Check-in</label>
+
+            <input
+              type="date"
+              id="inqCheckin"
+              required
+            />
+
+          </div>
+
+          <div class="field">
+            <label>Check-out</label>
+
+            <input
+              type="date"
+              id="inqCheckout"
+              required
+            />
+
+          </div>
+
+          <div class="field full">
+
+            <label>Message</label>
+
+            <textarea
+              id="inqMessage"
+              placeholder="Tell us anything we should know..."
+            ></textarea>
+
+          </div>
+
+        </div>
+
+        <button
+          type="submit"
+          class="btn form-submit"
+        >
+          Submit Inquiry →
+        </button>
+
+      </form>
+
+      <div
+        class="success-message"
+        id="inqSuccess"
+      >
+        <strong>Thank you ✓</strong><br>
+        Your inquiry has been recorded on this device.
+        The staff connection will be added when we connect
+        the Bluemist backend.
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       JAVASCRIPT
+  ========================== -->
+
+  <script>
+
+    /* -------------------------
+       NAVBAR
+    ------------------------- */
+
+    const navbar = document.getElementById("navbar");
+
+    window.addEventListener("scroll", () => {
+
+      if (window.scrollY > 50) {
+        navbar.classList.add("scrolled");
+      } else {
+        navbar.classList.remove("scrolled");
+      }
+
+    });
+
+
+    /* -------------------------
+       MOBILE MENU
+    ------------------------- */
+
+    const menuBtn = document.getElementById("menuBtn");
+    const navLinks = document.getElementById("navLinks");
+
+    menuBtn.addEventListener("click", () => {
+      navLinks.classList.toggle("active");
+
+      menuBtn.textContent =
+        navLinks.classList.contains("active")
+          ? "×"
+          : "☰";
+    });
+
+
+    document.querySelectorAll(".nav-links a").forEach(link => {
+
+      link.addEventListener("click", () => {
+
+        navLinks.classList.remove("active");
+        menuBtn.textContent = "☰";
+
+      });
+
+    });
+
+
+    /* -------------------------
+       MODAL
+    ------------------------- */
+
+    const inquiryModal =
+      document.getElementById("inquiryModal");
+
+    function openInquiry() {
+
+      inquiryModal.classList.add("active");
+
+      document.body.style.overflow = "hidden";
+
+      setDateMinimums();
+
+    }
+
+    function closeInquiry() {
+
+      inquiryModal.classList.remove("active");
+
+      document.body.style.overflow = "";
+
+    }
+
+
+    inquiryModal.addEventListener("click", (event) => {
+
+      if (event.target === inquiryModal) {
+        closeInquiry();
+      }
+
+    });
+
+
+    document.addEventListener("keydown", (event) => {
+
+      if (event.key === "Escape") {
+        closeInquiry();
+      }
+
+    });
+
+
+    /* -------------------------
+       DATE HANDLING
+    ------------------------- */
+
+    function todayString() {
+
+      const today = new Date();
+
+      const year = today.getFullYear();
+
+      const month =
+        String(today.getMonth() + 1).padStart(2, "0");
+
+      const day =
+        String(today.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+
+    }
+
+
+    function setDateMinimums() {
+
+      const today = todayString();
+
+      const checkin =
+        document.getElementById("checkin");
+
+      const checkout =
+        document.getElementById("checkout");
+
+      const inqCheckin =
+        document.getElementById("inqCheckin");
+
+      const inqCheckout =
+        document.getElementById("inqCheckout");
+
+      checkin.min = today;
+      checkout.min = today;
+
+      inqCheckin.min = today;
+      inqCheckout.min = today;
+
+    }
+
+    setDateMinimums();
+
+
+    document.getElementById("checkin")
+      .addEventListener("change", function () {
+
+        document.getElementById("checkout").min =
+          this.value;
+
+      });
+
+
+    document.getElementById("inqCheckin")
+      .addEventListener("change", function () {
+
+        document.getElementById("inqCheckout").min =
+          this.value;
+
+      });
+
+
+    /* -------------------------
+       AVAILABILITY FORM
+    ------------------------- */
+
+    document
+      .getElementById("availabilityForm")
+      .addEventListener("submit", function(event) {
+
+        event.preventDefault();
+
+        const inquiry = {
+
+          id: "INQ-" + Date.now(),
+
+          name:
+            document.getElementById("guestName").value,
+
+          phone:
+            document.getElementById("phone").value,
+
+          checkin:
+            document.getElementById("checkin").value,
+
+          checkout:
+            document.getElementById("checkout").value,
+
+          guests:
+            document.getElementById("guests").value,
+
+          room:
+            document.getElementById("room").value,
+
+          message:
+            document.getElementById("message").value,
+
+          status: "New",
+
+          createdAt:
+            new Date().toISOString()
+
+        };
+
+
+        saveInquiry(inquiry);
+
+
+        document
+          .getElementById("successMessage")
+          .style.display = "block";
+
+
+        this.reset();
+
+
+        setTimeout(() => {
+
+          document
+            .getElementById("successMessage")
+            .style.display = "none";
+
+        }, 6000);
+
+      });
+
+
+    /* -------------------------
+       INQUIRY MODAL FORM
+    ------------------------- */
+
+    document
+      .getElementById("inquiryForm")
+      .addEventListener("submit", function(event) {
+
+        event.preventDefault();
+
+        const inquiry = {
+
+          id: "INQ-" + Date.now(),
+
+          name:
+            document.getElementById("inqName").value,
+
+          phone:
+            document.getElementById("inqPhone").value,
+
+          checkin:
+            document.getElementById("inqCheckin").value,
+
+          checkout:
+            document.getElementById("inqCheckout").value,
+
+          guests:
+            document.getElementById("inqGuests").value,
+
+          message:
+            document.getElementById("inqMessage").value,
+
+          status: "New",
+
+          createdAt:
+            new Date().toISOString()
+
+        };
+
+
+        saveInquiry(inquiry);
+
+
+        document
+          .getElementById("inqSuccess")
+          .style.display = "block";
+
+
+        this.reset();
+
+
+        setTimeout(() => {
+
+          closeInquiry();
+
+          document
+            .getElementById("inqSuccess")
+            .style.display = "none";
+
+        }, 2500);
+
+      });
+
+
+    /* -------------------------
+       LOCAL INQUIRY STORAGE
+       Temporary until Supabase
+    ------------------------- */
+
+    function saveInquiry(inquiry) {
+
+      const existing =
+        JSON.parse(
+          localStorage.getItem("bluemist_inquiries") || "[]"
+        );
+
+      existing.push(inquiry);
+
+      localStorage.setItem(
+        "bluemist_inquiries",
+        JSON.stringify(existing)
+      );
+
+      console.log(
+        "Bluemist Inquiry Saved:",
+        inquiry
+      );
+
+    }
+
+
+    /* -------------------------
+       YEAR
+    ------------------------- */
+
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+
+
+    /* -------------------------
+       SCROLL REVEAL
+    ------------------------- */
+
+    const revealElements =
+      document.querySelectorAll(
+        ".experience-card, .room-card, .intro-image, .intro-grid > div"
+      );
+
+    const observer =
+      new IntersectionObserver(
+        entries => {
+
+          entries.forEach(entry => {
+
+            if (entry.isIntersecting) {
+
+              entry.target.style.opacity = "1";
+              entry.target.style.transform =
+                "translateY(0)";
+
+              observer.unobserve(entry.target);
+
+            }
+
+          });
+
+        },
+        {
+          threshold: .12
+        }
+      );
+
+
+    revealElements.forEach(element => {
+
+      element.style.opacity = "0";
+      element.style.transform = "translateY(25px)";
+      element.style.transition =
+        "opacity .7s ease, transform .7s ease";
+
+      observer.observe(element);
+
+    });
+
+  </script>
+
+</body>
+</html>
