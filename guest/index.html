@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1230,6 +1230,24 @@ button{
 
 }
 
+
+/* ============================================================
+   MULTI-GUEST CHECK-IN
+============================================================ */
+.guest-card{border:1px solid var(--line);background:#fbfbf8;border-radius:17px;padding:14px;margin-bottom:11px}
+.guest-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.guest-card-title{font-size:12px;font-weight:800}
+.guest-card-sub{color:var(--muted);font-size:8px;margin-top:3px}
+.remove-guest{border:1px solid #eadede;background:#fff;color:var(--red);border-radius:9px;padding:7px 9px;font-size:9px;font-weight:800}
+.id-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:2px}
+.id-upload{border:1px dashed #cfd4cc;background:#fff;border-radius:13px;padding:11px}
+.id-upload-title{font-size:9px;font-weight:800}
+.id-upload-sub{font-size:8px;color:var(--muted);margin-top:3px;line-height:1.45}
+.id-file-input{margin-top:9px;width:100%;font-size:8px}
+.id-preview{display:none;width:100%;height:105px;object-fit:cover;border-radius:9px;margin-top:8px;border:1px solid var(--line)}
+.id-file-name{display:none;margin-top:6px;font-size:8px;color:var(--green);word-break:break-word}
+@media(max-width:560px){.id-upload-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 
@@ -1591,165 +1609,34 @@ button{
      CHECK-IN
 ============================================================ -->
 
-<section
-  class="section"
-  id="checkin"
->
+<section class="section" id="checkin">
 
   <div class="section-head">
-
     <div>
-
-      <h2>
-        Check-in
-      </h2>
-
-      <p>
-        Tell us who is staying
-      </p>
-
+      <h2>Check-in</h2>
+      <p>Add every guest staying in this room</p>
     </div>
-
   </div>
-
 
   <div class="card">
-
-    <div class="notice"
-         style="
-           background:#f5f7f2;
-           border-radius:12px;
-           padding:11px;
-           font-size:9px;
-           color:#687066;
-           margin-bottom:14px;
-         "
-    >
-
-      Please enter the main guest details.
-      Reception can verify your details when
-      you arrive.
-
+    <div class="notice" style="background:#f5f7f2;border-radius:12px;padding:12px;font-size:9px;color:#687066;margin-bottom:14px;line-height:1.65">
+      Please enter the details for every guest. Each guest must provide an ID type and a clear front photo of their ID proof. The back photo is optional.
     </div>
 
-
     <form id="checkinForm">
+      <div id="guestsContainer"></div>
 
-      <div class="form-grid">
-
-        <div class="field">
-
-          <label>
-            Full name
-          </label>
-
-          <input
-            id="guestName"
-            type="text"
-            placeholder="Your full name"
-            required
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label>
-            Phone
-          </label>
-
-          <input
-            id="guestPhone"
-            type="tel"
-            placeholder="+91"
-            required
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label>
-            Email
-          </label>
-
-          <input
-            id="guestEmail"
-            type="email"
-            placeholder="Email address"
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label>
-            ID type
-          </label>
-
-          <select id="guestIdType">
-
-            <option value="">
-              Select ID
-            </option>
-
-            <option value="Aadhaar">
-              Aadhaar
-            </option>
-
-            <option value="Passport">
-              Passport
-            </option>
-
-            <option value="Driving Licence">
-              Driving Licence
-            </option>
-
-            <option value="Voter ID">
-              Voter ID
-            </option>
-
-            <option value="Other">
-              Other
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <div class="field full">
-
-          <label>
-            ID number
-          </label>
-
-          <input
-            id="guestIdNumber"
-            type="text"
-            placeholder="ID number"
-          >
-
-        </div>
-
-      </div>
-
-
-      <button
-        class="primary green"
-        type="submit"
-        id="checkinButton"
-      >
-        Submit Check-in Details
+      <button class="secondary" type="button" id="addGuestButton" style="width:100%;margin:2px 0 12px" onclick="addGuestCard()">
+        + Add Another Guest
       </button>
 
+      <div id="checkinUploadNotice" style="display:none;background:#fff8e9;border:1px solid #ead9af;color:#7b6332;border-radius:12px;padding:11px;font-size:9px;line-height:1.6;margin-bottom:12px"></div>
+
+      <button class="primary green" type="submit" id="checkinButton">
+        Submit Check-in Details
+      </button>
     </form>
-
   </div>
-
 </section>
 
 
@@ -2928,228 +2815,217 @@ function selectMeal(meal){
 
 
 /* ============================================================
-   CHECK-IN
+   MULTI-GUEST CHECK-IN
 ============================================================ */
 
-$("checkinForm").addEventListener(
-  "submit",
-  async event => {
+const GUEST_ID_BUCKET = "guest-id-proofs";
+const MAX_ID_FILE_SIZE = 8 * 1024 * 1024;
+const ALLOWED_ID_TYPES = ["image/jpeg","image/png","image/webp"];
+let guestCards = [];
 
-    event.preventDefault();
+function makeGuestId(){
+  return window.crypto?.randomUUID?.() || ("guest_" + Date.now() + "_" + Math.random().toString(36).slice(2));
+}
 
+function addGuestCard(){
+  const id = makeGuestId();
+  guestCards.push({id,frontFile:null,backFile:null});
+  renderGuestCards();
+}
 
-    if(!roomContext){
+function removeGuestCard(id){
+  if(guestCards.length <= 1){ toast("At least one guest is required."); return; }
+  guestCards = guestCards.filter(g => g.id !== id);
+  renderGuestCards();
+}
 
-      toast(
-        "Room information is not available."
-      );
+function renderGuestCards(){
+  const container = $("guestsContainer");
+  if(!container) return;
+  container.innerHTML = guestCards.map((guest,index) => `
+    <div class="guest-card" data-guest-card="${guest.id}">
+      <div class="guest-card-head">
+        <div><div class="guest-card-title">Guest ${index+1}</div><div class="guest-card-sub">Guest details and ID proof</div></div>
+        ${index>0 ? `<button type="button" class="remove-guest" onclick="removeGuestCard('${guest.id}')">Remove</button>` : ""}
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Full name</label><input data-field="full_name" type="text" placeholder="Guest full name" required></div>
+        <div class="field"><label>Phone</label><input data-field="phone" type="tel" placeholder="+91" required></div>
+        <div class="field"><label>Email</label><input data-field="email" type="email" placeholder="Email address"></div>
+        <div class="field"><label>ID type</label><select data-field="id_type" required><option value="">Select ID</option><option value="Aadhaar">Aadhaar</option><option value="Passport">Passport</option><option value="Driving Licence">Driving Licence</option><option value="Voter ID">Voter ID</option><option value="Other">Other</option></select></div>
+      </div>
+      <div class="id-upload-grid">
+        <div class="id-upload">
+          <div class="id-upload-title">ID proof — Front <span style="color:var(--red)">*</span></div>
+          <div class="id-upload-sub">Clear front-side photo. JPG, PNG or WebP, max 8 MB.</div>
+          <input class="id-file-input" data-file-side="front" type="file" accept="image/jpeg,image/png,image/webp" required>
+          <img class="id-preview" data-preview-side="front" alt="ID front preview">
+          <div class="id-file-name" data-file-name="front"></div>
+        </div>
+        <div class="id-upload">
+          <div class="id-upload-title">ID proof — Back <span style="color:var(--muted)">(optional)</span></div>
+          <div class="id-upload-sub">Upload the back side if the selected ID has one.</div>
+          <input class="id-file-input" data-file-side="back" type="file" accept="image/jpeg,image/png,image/webp">
+          <img class="id-preview" data-preview-side="back" alt="ID back preview">
+          <div class="id-file-name" data-file-name="back"></div>
+        </div>
+      </div>
+    </div>
+  `).join("");
 
-      return;
+  container.querySelectorAll("[data-guest-card]").forEach(card => {
+    const guest = guestCards.find(g => g.id === card.dataset.guestCard);
+    if(!guest) return;
+    card.querySelectorAll("[data-field]").forEach(input => {
+      if(guest[input.dataset.field]) input.value = guest[input.dataset.field];
+      input.addEventListener("input", () => guest[input.dataset.field] = input.value);
+      input.addEventListener("change", () => guest[input.dataset.field] = input.value);
+    });
+    card.querySelector('[data-file-side="front"]')?.addEventListener("change", e => handleGuestFile(guest.id,"front",e.target.files?.[0]||null));
+    card.querySelector('[data-file-side="back"]')?.addEventListener("change", e => handleGuestFile(guest.id,"back",e.target.files?.[0]||null));
+    ["front","back"].forEach(side => {
+      const file = guest[side+"File"];
+      if(file){
+        const preview = card.querySelector(`[data-preview-side="${side}"]`);
+        const name = card.querySelector(`[data-file-name="${side}"]`);
+        if(preview){ preview.src = URL.createObjectURL(file); preview.style.display="block"; }
+        if(name){ name.textContent = file.name; name.style.display="block"; }
+      }
+    });
+  });
+  updateCheckinNotice();
+}
 
-    }
+function handleGuestFile(guestId,side,file){
+  const guest = guestCards.find(g => g.id === guestId);
+  if(!guest) return;
+  if(!file){ guest[side+"File"] = null; renderGuestCards(); return; }
+  if(!ALLOWED_ID_TYPES.includes(file.type)){ toast("Please upload a JPG, PNG or WebP image."); return; }
+  if(file.size > MAX_ID_FILE_SIZE){ toast("Each ID photo must be 8 MB or smaller."); return; }
+  guest[side+"File"] = file;
+  renderGuestCards();
+}
 
+function updateCheckinNotice(){
+  const notice = $("checkinUploadNotice");
+  if(!notice) return;
+  const missing = guestCards.filter(g => !g.frontFile).length;
+  notice.style.display = missing ? "block" : "none";
+  notice.textContent = missing ? `${missing} guest${missing===1?"":"s"} still need a front ID proof photo.` : "";
+}
 
-    const button =
-      $("checkinButton");
-
-
-    button.disabled =
-      true;
-
-    button.textContent =
-      "Submitting...";
-
-
-    const guest = {
-
-      full_name:
-        $("guestName")
-          .value
-          .trim(),
-
-      phone:
-        $("guestPhone")
-          .value
-          .trim(),
-
-      email:
-        $("guestEmail")
-          .value
-          .trim() ||
-        null,
-
-      id_type:
-        $("guestIdType")
-          .value ||
-        null,
-
-      id_number:
-        $("guestIdNumber")
-          .value
-          .trim() ||
-        null
-
+function readGuestFormData(){
+  return [...document.querySelectorAll("[data-guest-card]")].map(card => {
+    const guest = guestCards.find(g => g.id === card.dataset.guestCard);
+    return {
+      full_name:card.querySelector('[data-field="full_name"]')?.value.trim() || "",
+      phone:card.querySelector('[data-field="phone"]')?.value.trim() || "",
+      email:card.querySelector('[data-field="email"]')?.value.trim() || null,
+      id_type:card.querySelector('[data-field="id_type"]')?.value || "",
+      nationality:"Indian",
+      frontFile:guest?.frontFile || null,
+      backFile:guest?.backFile || null
     };
+  });
+}
 
+function fileExtension(file){
+  if(file?.type === "image/png") return "png";
+  if(file?.type === "image/webp") return "webp";
+  return "jpg";
+}
 
-    try{
+function safeFileName(name){
+  return String(name || "id-proof").replace(/[^a-zA-Z0-9._-]/g,"-").slice(0,100);
+}
 
-      /*
-        Create/find the guest profile.
+async function uploadGuestIdFile(guestId,file,side){
+  const roomId = roomContext?.room_id || "room";
+  const path = `${roomId}/${guestId}/${Date.now()}-${side}-${safeFileName(file.name)}.${fileExtension(file)}`;
+  const {error} = await supabaseClient.storage.from(GUEST_ID_BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+  if(error) throw error;
+  return path;
+}
 
-        We intentionally do not create
-        a fake booking here.
+async function saveGuestDocumentMetadata(guestId,file,side,storagePath){
+  const {error} = await supabaseClient.rpc("save_guest_id_document",{
+    p_guest_id:guestId,
+    p_document_type:"id_proof",
+    p_side:side,
+    p_file_name:file.name,
+    p_storage_path:storagePath,
+    p_mime_type:file.type,
+    p_file_size:file.size
+  });
+  if(error) throw error;
+}
 
-        The actual booking remains controlled
-        by Admin/Reception.
-      */
+async function cleanupUploadedFiles(paths){
+  if(!paths.length) return;
+  try{ await supabaseClient.storage.from(GUEST_ID_BUCKET).remove(paths); }catch(error){ console.warn("Storage cleanup:",error); }
+}
 
-      const {
-        data:existing,
-        error:findError
-      } =
-        await supabaseClient
-          .from("guests")
-          .select("id")
-          .eq(
-            "phone",
-            guest.phone
-          )
-          .limit(1)
-          .maybeSingle();
+$("checkinForm").addEventListener("submit",async event => {
+  event.preventDefault();
+  if(!roomContext){ toast("Room information is not available."); return; }
+  const guests = readGuestFormData();
+  if(!guests.length){ toast("Please add at least one guest."); return; }
+  for(let i=0;i<guests.length;i++){
+    const guest=guests[i];
+    if(!guest.full_name){ toast(`Enter the full name for Guest ${i+1}.`); return; }
+    if(!guest.phone){ toast(`Enter the phone number for Guest ${i+1}.`); return; }
+    if(!guest.id_type){ toast(`Select an ID type for Guest ${i+1}.`); return; }
+    if(!guest.frontFile){ toast(`Upload the front ID proof for Guest ${i+1}.`); return; }
+  }
 
+  const button=$("checkinButton");
+  button.disabled=true;
+  button.textContent="Saving guest details...";
+  let uploadedPaths=[];
 
-      if(findError){
+  try{
+    const payload=guests.map(g=>({full_name:g.full_name,phone:g.phone,email:g.email,id_type:g.id_type,nationality:g.nationality}));
+    const {data,error}=await supabaseClient.rpc("submit_guest_checkin",{p_token:getQRToken(),p_guests:payload});
+    if(error) throw error;
+    if(!data?.success || !Array.isArray(data.guests) || data.guests.length!==guests.length) throw new Error("Guest check-in did not return the expected guest records.");
 
-        throw findError;
+    button.textContent="Uploading ID proofs...";
+    const createdIds=data.guests.map(g=>g.guest_id);
 
+    for(let i=0;i<guests.length;i++){
+      const guest=guests[i];
+      const guestId=createdIds[i];
+      const frontPath=await uploadGuestIdFile(guestId,guest.frontFile,"front");
+      uploadedPaths.push(frontPath);
+      await saveGuestDocumentMetadata(guestId,guest.frontFile,"front",frontPath);
+      if(guest.backFile){
+        const backPath=await uploadGuestIdFile(guestId,guest.backFile,"back");
+        uploadedPaths.push(backPath);
+        await saveGuestDocumentMetadata(guestId,guest.backFile,"back",backPath);
       }
-
-
-      let guestId =
-        existing?.id ||
-        null;
-
-
-      if(!guestId){
-
-        const {
-          data:newGuest,
-          error:createError
-        } =
-          await supabaseClient
-            .from("guests")
-            .insert(guest)
-            .select("id")
-            .single();
-
-
-        if(createError){
-
-          throw createError;
-
-        }
-
-
-        guestId =
-          newGuest.id;
-
-      }else{
-
-        /*
-          Update the existing guest with
-          the latest information.
-        */
-
-        const {
-          error:updateError
-        } =
-          await supabaseClient
-            .from("guests")
-            .update({
-              full_name:
-                guest.full_name,
-
-              email:
-                guest.email,
-
-              id_type:
-                guest.id_type,
-
-              id_number:
-                guest.id_number
-            })
-            .eq(
-              "id",
-              guestId
-            );
-
-
-        if(updateError){
-
-          throw updateError;
-
-        }
-
-      }
-
-
-      /*
-        Store the guest ID locally for this
-        portal session.
-
-        This will be used by later modules.
-      */
-
-      localStorage.setItem(
-        "bluemist_guest_id",
-        guestId
-      );
-
-
-      localStorage.setItem(
-        "bluemist_guest_name",
-        guest.full_name
-      );
-
-
-      toast(
-        "Guest details submitted successfully."
-      );
-
-
-      button.textContent =
-        "Details Submitted ✓";
-
-
-      button.disabled =
-        true;
-
-
-    }catch(error){
-
-      console.error(
-        "Guest submission:",
-        error
-      );
-
-
-      toast(
-        "Unable to save guest details: " +
-        error.message
-      );
-
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        "Submit Check-in Details";
-
     }
 
+    localStorage.setItem("bluemist_guest_id",createdIds[0]);
+    localStorage.setItem("bluemist_guest_name",guests[0].full_name);
+    localStorage.setItem("bluemist_guest_ids",JSON.stringify(createdIds));
+    toast(guests.length===1 ? "Guest details and ID proof submitted successfully." : `${guests.length} guest records and ID proofs submitted successfully.`);
+    button.textContent="Check-in Details Submitted ✓";
+    $("addGuestButton").disabled=true;
+    document.querySelectorAll("#guestsContainer input,#guestsContainer select,#guestsContainer button").forEach(el=>el.disabled=true);
+    updateCheckinNotice();
+  }catch(error){
+    console.error("Secure guest check-in:",error);
+    await cleanupUploadedFiles(uploadedPaths);
+    const message=String(error?.message||error||"Unknown error");
+    if(message.toLowerCase().includes("bucket") || message.toLowerCase().includes("storage")) toast("ID photo storage is not configured yet. Please contact Bluemist reception.");
+    else if(message.toLowerCase().includes("save_guest_id_document") || message.toLowerCase().includes("function")) toast("ID document database setup is incomplete. Please contact Bluemist reception.");
+    else toast("Unable to complete guest check-in: "+message);
+    button.disabled=false;
+    button.textContent="Submit Check-in Details";
   }
-);
+});
+
+addGuestCard();
 
 
 /* ============================================================
