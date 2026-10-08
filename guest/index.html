@@ -2350,30 +2350,18 @@ function closeModal(id){
    QR TOKEN
 ============================================================ */
 
+function getQRParams(){
+  return new URLSearchParams(window.location.search);
+}
+
 function getQRToken(){
+  const params=getQRParams();
+  return (params.get("token") || params.get("qr") || "").trim();
+}
 
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-
-  /*
-    Primary format:
-
-      guest/?token=QR_TOKEN
-
-    Also supports:
-
-      guest/?qr=QR_TOKEN
-  */
-
-  return (
-    params.get("token") ||
-    params.get("qr") ||
-    ""
-  ).trim();
-
+function getQRMode(){
+  const mode=String(getQRParams().get("mode")||"").toLowerCase();
+  return mode==="service" ? "service" : "guest";
 }
 
 
@@ -2502,6 +2490,11 @@ async function loadRoomFromQR(){
     await loadGuestBill();
 
 
+    if(getQRMode()==="service"){
+      activateServiceQRMode();
+    }
+
+
   }catch(error){
 
     console.error(error);
@@ -2512,6 +2505,16 @@ async function loadRoomFromQR(){
 
   }
 
+}
+
+
+function activateServiceQRMode(){
+  const services=document.getElementById("services");
+  const title=document.querySelector("#services h2");
+  if(title) title.textContent="Service & Help";
+  const intro=services?.querySelector("p");
+  if(intro) intro.textContent="Need something during your stay? Select a service below and send your request directly to Bluemist.";
+  services?.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 
