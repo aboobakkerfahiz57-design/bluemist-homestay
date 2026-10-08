@@ -2902,11 +2902,53 @@ function renderGuestCards(){
 function handleGuestFile(guestId,side,file){
   const guest = guestCards.find(g => g.id === guestId);
   if(!guest) return;
-  if(!file){ guest[side+"File"] = null; renderGuestCards(); return; }
-  if(!ALLOWED_ID_TYPES.includes(file.type)){ toast("Please upload a JPG, PNG or WebP image."); return; }
-  if(file.size > MAX_ID_FILE_SIZE){ toast("Each ID photo must be 8 MB or smaller."); return; }
+
+  const card = document.querySelector(`[data-guest-card="${guestId}"]`);
+  const input = card?.querySelector(`[data-file-side="${side}"]`);
+  const preview = card?.querySelector(`[data-preview-side="${side}"]`);
+  const name = card?.querySelector(`[data-file-name="${side}"]`);
+
+  if(!file){
+    guest[side+"File"] = null;
+    if(preview){ preview.removeAttribute("src"); preview.style.display="none"; }
+    if(name){ name.textContent=""; name.style.display="none"; }
+    updateCheckinNotice();
+    return;
+  }
+
+  if(!ALLOWED_ID_TYPES.includes(file.type)){
+    if(input) input.value="";
+    toast("Please upload a JPG, PNG or WebP image.");
+    return;
+  }
+
+  if(file.size > MAX_ID_FILE_SIZE){
+    if(input) input.value="";
+    toast("Each ID photo must be 8 MB or smaller.");
+    return;
+  }
+
+  /* Keep the real File object without re-rendering the card.
+     Re-rendering a file input makes the browser show
+     "no file selected" even though the File object exists. */
   guest[side+"File"] = file;
-  renderGuestCards();
+
+  if(preview){
+    if(preview.dataset.objectUrl){
+      try{ URL.revokeObjectURL(preview.dataset.objectUrl); }catch(e){}
+    }
+    const objectUrl = URL.createObjectURL(file);
+    preview.src = objectUrl;
+    preview.dataset.objectUrl = objectUrl;
+    preview.style.display="block";
+  }
+
+  if(name){
+    name.textContent = file.name;
+    name.style.display="block";
+  }
+
+  updateCheckinNotice();
 }
 
 function updateCheckinNotice(){
