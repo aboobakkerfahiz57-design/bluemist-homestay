@@ -114,7 +114,15 @@
 
 <section class="page" id="page-rooms"><div class="heading"><h1>Rooms</h1><p>Live room availability and room status.</p></div><div class="roomgrid" id="roomsGrid"></div></section>
 
-<section class="page" id="page-guests"><div class="heading"><h1>Guests</h1><p>Guest profiles and stay history.</p></div><div class="toolbar"><input class="search" id="guestSearch" placeholder="Search guest or phone..." oninput="filterGuests()"></div><div class="tablebox"><div class="tablewrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>ID</th><th>Nationality</th><th>Created</th></tr></thead><tbody id="guestsTable"></tbody></table></div></div></section>
+<section class="page" id="page-guests">
+<div class="heading"><h1>Guests & QR Check-ins</h1><p>Every QR-scanned guest appears here first. Reception can accept, process the bill, view ID proof and complete check-in.</p></div>
+<div class="panel" style="margin-bottom:16px">
+  <div class="panelhead"><div><h3>Pending Guest Check-in Requests</h3><small style="color:#777">QR scan → Accept → Bill Processing → Check-in</small></div><button onclick="loadGuestRequests()">↻ Refresh</button></div>
+  <div class="tablebox"><div class="tablewrap"><table><thead><tr><th>Guest</th><th>Phone</th><th>Room</th><th>Scanned</th><th>Status</th><th>Action</th></tr></thead><tbody id="guestRequestsTable"></tbody></table></div></div>
+</div>
+<div class="toolbar"><input class="search" id="guestSearch" placeholder="Search guest or phone..." oninput="filterGuests()"></div>
+<div class="tablebox"><div class="tablewrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>ID</th><th>Nationality</th><th>Created</th><th>Action</th></tr></thead><tbody id="guestsTable"></tbody></table></div></div>
+</section>
 
 <section class="page" id="page-billing"><div class="heading"><h1>Billing & Checkout</h1><p>Guest folio, advance payments, balance collection and final invoice.</p></div>
 <div class="notice">Select a booking to build the guest folio. Existing recorded payments are deducted automatically. Food and other charges can be added before checkout.</div>
@@ -249,7 +257,7 @@ function applyRoleAccess(){
   document.querySelector('#page-dashboard p').textContent=isReception?"Reception operations, check-ins, guests, billing and room service.":"Complete control of Bluemist operations.";
 }
 function showLogin(){$("loginScreen").classList.remove("hidden");$("app").classList.add("hidden")}
-function showApp(){$("loginScreen").classList.add("hidden");$("app").classList.remove("hidden");$("adminAvatar").textContent=(currentProfile?.full_name||"Staff").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();loadDashboard();loadCheckinDashboard()}
+function showApp(){$("loginScreen").classList.add("hidden");$("app").classList.remove("hidden");$("adminAvatar").textContent=(currentProfile?.full_name||"Staff").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();loadDashboard();loadCheckinDashboard();loadGuestRequests()}
 function showLoginError(m){$("loginError").textContent=m}
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginBtn").disabled=true;$("loginBtn").textContent="Signing in...";showLoginError("");const {data,error}=await supabaseClient.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPassword").value});$("loginBtn").disabled=false;$("loginBtn").textContent="Sign in to Staff System";if(error)return showLoginError(error.message);currentUser=data.user;await loadProfile()});
 $("logoutBtn").onclick=async()=>{await supabaseClient.auth.signOut();showLogin()};
@@ -290,6 +298,7 @@ async function loadBookings(){
   bookingsData=await attachBookingRooms(data||[]);renderBookings(bookingsData);fillBillBookings();
 }
 function bookingRoomName(x){return x?.booking_rooms?.[0]?.rooms?.room_number?"Room "+x.booking_rooms[0].rooms.room_number:"—"}
+function renderBookings(d){$("bookingsTable").innerHTML=d.length?d.map(x=>`<tr><td><b>${esc(x.booking_number||'—')}</b></td><td><b>${esc(x.guests?.full_name||'Guest')}</b><br><small>${esc(x.guests?.phone||'—')}</small></td><td>${date(x.check_in)}</td><td>${date(x.check_out)}</td><td>${badge(x.status)}</td><td>${money(x.total_amount)}</td><td><div class="actions"><button class="action" onclick="openBill('${x.id}')">Bill</button>${x.status!=='checked_in'&&x.status!=='checked_out'?`<button class="action" onclick="updateBookingStatus('${x.id}','checked_in')">Check-in</button>`:''}${x.status==='checked_in'?`<button class="action" onclick="checkoutReminder('${x.id}')">WhatsApp</button>`:''}${x.status!=='checked_out'?`<button class="action" onclick="updateBookingStatus('${x.id}','checked_out')">Checkout</button>`:''}</div></td></tr>`).join(''):`<tr><td colspan="7">No bookings found.</td></tr>`}
 function filterBookings(){let q=$("bookingSearch").value.toLowerCase(),s=$("bookingStatusFilter").value;renderBookings(bookingsData.filter(x=>(!q||`${x.booking_number} ${x.guests?.full_name||""} ${x.guests?.phone||""}`.toLowerCase().includes(q))&&(!s||x.status===s)))}
 $("bookingStatusFilter").onchange=filterBookings;
 async function updateBookingStatus(id,status){
@@ -332,9 +341,88 @@ async function loadCheckinDashboard(){
 async function loadRooms(){const {data,error}=await supabaseClient.from("rooms").select("*,room_types(name)").eq("is_active",true).order("room_number");if(error)return $("roomsGrid").innerHTML=`<div class="empty">${esc(error.message)}</div>`;roomsData=data||[];$("roomsGrid").innerHTML=roomsData.length?roomsData.map(r=>`<div class="room"><div class="roomnum">Room ${esc(r.room_number)}</div><h3>${esc(r.room_name)}</h3>${badge(r.status)}<div class="roommeta"><span>Capacity ${r.capacity}</span><b>${money(r.base_price)}</b></div><div class="actions" style="margin-top:12px"><button class="action" onclick="setRoomStatus('${r.id}','available')">Available</button><button class="action" onclick="setRoomStatus('${r.id}','cleaning')">Cleaning</button><button class="action" onclick="setRoomStatus('${r.id}','maintenance')">Maintenance</button></div></div>`).join(""):`<div class="empty">No rooms.</div>`}
 async function setRoomStatus(id,status){const {error}=await supabaseClient.from("rooms").update({status}).eq("id",id);if(error)return toast(error.message);toast("Room status updated");loadRooms();loadDashboard()}
 
-async function loadGuests(){const {data,error}=await supabaseClient.from("guests").select("*").order("created_at",{ascending:false});if(error)return $("guestsTable").innerHTML=`<tr><td colspan="6">${esc(error.message)}</td></tr>`;guestsData=data||[];renderGuests(guestsData)}
-function renderGuests(d){$("guestsTable").innerHTML=d.length?d.map(x=>`<tr><td><b>${esc(x.full_name)}</b></td><td>${esc(x.phone||"—")}</td><td>${esc(x.email||"—")}</td><td>${esc(x.id_type||"—")}</td><td>${esc(x.nationality||"—")}</td><td>${date(x.created_at)}</td></tr>`).join(""):`<tr><td colspan="6">No guests found.</td></tr>`}
+async function loadGuests(){
+  const {data,error}=await supabaseClient.from("guests").select("*").order("created_at",{ascending:false});
+  if(error)return $("guestsTable").innerHTML=`<tr><td colspan="7">${esc(error.message)}</td></tr>`;
+  guestsData=data||[];renderGuests(guestsData);await loadGuestRequests();
+}
+function renderGuests(d){
+  $("guestsTable").innerHTML=d.length?d.map(x=>`<tr>
+    <td><b>${esc(x.full_name)}</b></td><td>${esc(x.phone||"—")}</td><td>${esc(x.email||"—")}</td>
+    <td>${esc(x.id_type||"—")}</td><td>${esc(x.nationality||"—")}</td><td>${date(x.created_at)}</td>
+    <td><div class="actions"><button class="action" onclick="viewGuestDetails('${x.id}')">View</button><button class="action" onclick="viewGuestID('${x.id}')">ID Proof</button><button class="action" onclick="guestBooking('${x.id}')">Booking</button></div></td>
+  </tr>`).join(""):`<tr><td colspan="7">No guests found.</td></tr>`;
+}
 function filterGuests(){let q=$("guestSearch").value.toLowerCase();renderGuests(guestsData.filter(x=>`${x.full_name||""} ${x.phone||""} ${x.email||""}`.toLowerCase().includes(q)))}
+
+async function loadGuestRequests(){
+  const {data,error}=await supabaseClient.from("guest_checkin_requests").select("*,guests:guest_id(id,full_name,phone,email,id_type,nationality),rooms:room_id(id,room_number,room_name),bookings:booking_id(id,booking_number,status,check_in,check_out,total_amount)").order("requested_at",{ascending:false});
+  if(error){$("guestRequestsTable").innerHTML=`<tr><td colspan="6">${esc(error.message)}</td></tr>`;return;}
+  const rows=data||[];
+  $("guestRequestsTable").innerHTML=rows.length?rows.map(r=>{
+    const g=r.guests||{},room=r.rooms||{},b=r.bookings||{};
+    let action='';
+    if(r.status==='pending') action=`<button class="action" onclick="acceptGuestRequest('${r.id}')">Accept</button>`;
+    else if(['accepted','billing'].includes(r.status)) action=`<button class="action" onclick="processGuestBill('${r.id}','${r.booking_id||''}')">Bill Processing</button><button class="action" onclick="completeGuestCheckin('${r.id}')">Check-in</button>`;
+    else if(r.status==='checked_in') action=`<button class="action" onclick="openBill('${r.booking_id}')">Bill</button><button class="action" onclick="checkoutReminder('${r.booking_id}')">WhatsApp</button>`;
+    else if(r.status==='checked_out') action=`<button class="action" onclick="openBill('${r.booking_id}')">Bill</button>`;
+    return `<tr><td><b>${esc(g.full_name||'Guest')}</b></td><td>${esc(g.phone||'—')}</td><td>${esc(room.room_number||'—')}</td><td>${dt(r.requested_at)}</td><td>${badge(r.status)}</td><td><div class="actions">${action}<button class="action" onclick="viewGuestID('${r.guest_id}')">ID Proof</button></div></td></tr>`;
+  }).join(''):`<tr><td colspan="6">No QR check-in requests.</td></tr>`;
+}
+async function acceptGuestRequest(id){
+  const {data,error}=await supabaseClient.rpc('accept_guest_checkin_request',{p_request_id:id});
+  if(error)return toast(error.message);
+  toast(`${data?.guest_name||'Guest'} accepted. Booking ready for billing.`);
+  await loadGuestRequests();await loadBookings();await loadCheckinDashboard();await loadRooms();await loadDashboard();
+}
+async function processGuestBill(requestId,bookingId){
+  const {error}=await supabaseClient.rpc('mark_guest_checkin_billing',{p_request_id:requestId});
+  if(error)return toast(error.message);
+  await loadGuestRequests();
+  if(bookingId){await showPage('billing');await openBill(bookingId);}
+}
+async function completeGuestCheckin(requestId){
+  const {data,error}=await supabaseClient.rpc('complete_guest_checkin',{p_request_id:requestId});
+  if(error)return toast(error.message);
+  toast('Guest checked in successfully.');
+  await loadGuestRequests();await loadBookings();await loadCheckinDashboard();await loadRooms();await loadDashboard();
+  await sendCheckinWhatsApp(data?.guest_id,data?.booking_id);
+}
+async function viewGuestDetails(id){
+  const g=guestsData.find(x=>x.id===id);if(!g)return;
+  const {data:rs}=await supabaseClient.from('guest_checkin_requests').select('*,rooms:room_id(room_number),bookings:booking_id(booking_number,status,check_in,check_out,total_amount)').eq('guest_id',id).order('requested_at',{ascending:false});
+  const r=rs?.[0],b=r?.bookings;
+  alert(`GUEST DETAILS\n\nName: ${g.full_name}\nPhone: ${g.phone||'—'}\nEmail: ${g.email||'—'}\nID Type: ${g.id_type||'—'}\nNationality: ${g.nationality||'—'}\n\nRoom: ${r?.rooms?.room_number||'—'}\nBooking: ${b?.booking_number||'—'}\nStatus: ${b?.status||r?.status||'—'}\nCheck-in: ${b?.check_in||'—'}\nCheck-out: ${b?.check_out||'—'}\nTotal: ${money(b?.total_amount||0)}`);
+}
+async function viewGuestID(guestId){
+  const {data,error}=await supabaseClient.from('guest_id_documents').select('*').eq('guest_id',guestId).order('created_at',{ascending:true});
+  if(error)return toast(error.message);
+  if(!data?.length)return toast('No ID proof uploaded for this guest.');
+  let message='ID proofs for this guest:\n\n';
+  for(const doc of data){
+    const r=await supabaseClient.storage.from('guest-id-documents').createSignedUrl(doc.storage_path,600);
+    if(r.data?.signedUrl){window.open(r.data.signedUrl,'_blank');message+=`${doc.side||'front'}: opened\n`;}
+  }
+  toast('ID proof opened in a new tab.');
+}
+async function guestBooking(guestId){
+  const {data:rs,error}=await supabaseClient.from('guest_checkin_requests').select('booking_id').eq('guest_id',guestId).not('booking_id','is',null).order('requested_at',{ascending:false}).limit(1);
+  if(error)return toast(error.message);if(rs?.[0]?.booking_id){await showPage('billing');await openBill(rs[0].booking_id);}else toast('No booking is linked to this guest yet.');
+}
+async function sendCheckinWhatsApp(guestId,bookingId){
+  const g=guestsData.find(x=>x.id===guestId) || (await supabaseClient.from('guests').select('full_name,phone').eq('id',guestId).single()).data;
+  if(!g?.phone)return;
+  const phone=String(g.phone).replace(/\D/g,'');
+  const msg=`Hi ${g.full_name}, this is Bluemist Homestay reception. Your check-in is confirmed. You can now enjoy your stay with us. We wish you a pleasant and comfortable stay. Thank you for choosing Bluemist Homestay.`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+async function checkoutReminder(bookingId){
+  const b=bookingsData.find(x=>x.id===bookingId);let g=b?.guests;
+  if(!g){const r=await supabaseClient.from('bookings').select('check_out,guests:primary_guest_id(full_name,phone)').eq('id',bookingId).single();if(r.error)return toast(r.error.message);b=r.data;g=r.data.guests;}
+  const phone=String(g?.phone||'').replace(/\D/g,'');if(!phone)return toast('Guest phone number is missing.');
+  const msg=`Hi ${g.full_name}, this is Bluemist Homestay reception. We are messaging to let you know that your stay/check-out time is approaching. If you would like to continue your stay with us, please contact reception so we can assist you with the extension. Thank you for staying with Bluemist Homestay.`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+}
 
 async function loadPayments(){
   const {data,error}=await supabaseClient.from("payments").select("*").order("created_at",{ascending:false});
@@ -623,49 +711,78 @@ async function fillBillBookings(){
   $("billBooking").innerHTML='<option value="">Select guest booking...</option>'+bookingsData.map(x=>`<option value="${x.id}">${esc(x.guests?.full_name||"Guest")} · ${esc(bookingRoomName(x))} · ${date(x.check_in)}</option>`).join("");
 }
 async function loadBilling(){if(!bookingsData.length)await loadBookings();else fillBillBookings()}
+
+async function getBillExtras(b){
+  let food=0,other=0;
+  const roomId=b?.booking_rooms?.[0]?.room_id;
+  if(roomId){
+    const fq=await supabaseClient.from('food_orders').select('*').eq('room_id',roomId);
+    (fq.data||[]).forEach(x=>{food+=Number(x.total_amount??x.amount??0)||0;});
+    const sq=await supabaseClient.from('service_requests').select('*').eq('room_id',roomId);
+    (sq.data||[]).forEach(x=>{other+=Number(x.total_amount??x.amount??x.price??0)||0;});
+  }
+  return {food,other};
+}
+async function saveBillingFolio(){
+  if(!selectedBillData?.id || !selectedBillData._bill)return;
+  const b=selectedBillData._bill;
+  const invoice='INV-'+String(selectedBill).slice(0,8).toUpperCase();
+  const status=b.balance<=0?'paid':b.paid>0?'partial':'open';
+  const row={booking_id:selectedBill,room_amount:b.room,food_amount:b.food,other_amount:b.other,discount_amount:b.discount,tax_amount:b.tax,grand_total:b.total,paid_amount:b.paid,balance_due:b.balance,invoice_number:invoice,status,updated_by:currentUser?.id||null};
+  const {error}=await supabaseClient.from('billing_folios').upsert(row,{onConflict:'booking_id'});
+  if(error)console.warn('Billing folio save:',error.message);
+}
 async function openBill(id){
   if(!id){selectedBill=null;selectedBillData=null;$("billDocument").innerHTML='<div class="empty">Select a guest booking to view the bill.</div>';return;}
   selectedBill=id;$("billBooking").value=id;
   let b=bookingsData.find(x=>x.id===id);
-  if(!b){const r=await supabaseClient.from("bookings").select("*,guests:primary_guest_id(full_name,phone,email,nationality)").eq("id",id).single();if(r.error)return toast(r.error.message);b=(await attachBookingRooms([r.data]))[0];}
+  if(!b){const r=await supabaseClient.from('bookings').select('*,guests:primary_guest_id(full_name,phone,email,nationality)').eq('id',id).single();if(r.error)return toast(r.error.message);b=(await attachBookingRooms([r.data]))[0];}
   selectedBillData=b;
-  const {data:pays,error:payError}=await supabaseClient.from("payments").select("*").eq("booking_id",id).order("created_at");
-  if(payError)return toast(payError.message);
-  const paid=(pays||[]).filter(x=>["paid","completed","success"].includes(String(x.status||"").toLowerCase())).reduce((a,x)=>a+Number(x.amount||0),0);
-  $("billRoomTotal").value=Number(b?.total_amount||0);
-  $("billFood").value=0;$("billOther").value=0;$("billDiscount").value=0;
-  $("billTax").value=Number(b?.tax_amount||b?.tax||0);
+  const [payRes,folioRes,extraRes]=await Promise.all([
+    supabaseClient.from('payments').select('*').eq('booking_id',id).order('created_at'),
+    supabaseClient.from('billing_folios').select('*').eq('booking_id',id).maybeSingle(),
+    getBillExtras(b)
+  ]);
+  const pays=payRes.data||[];
+  const paid=(pays||[]).filter(x=>['paid','completed','success'].includes(String(x.status||'').toLowerCase())).reduce((a,x)=>a+Number(x.amount||0),0);
+  const folio=folioRes.data;
+  $("billRoomTotal").value=Number(folio?.room_amount ?? b?.total_amount ?? 0);
+  $("billFood").value=Number(folio?.food_amount ?? extraRes.food ?? 0);
+  $("billOther").value=Number(folio?.other_amount ?? extraRes.other ?? 0);
+  $("billDiscount").value=Number(folio?.discount_amount ?? b?.discount_amount ?? b?.discount ?? 0);
+  $("billTax").value=Number(folio?.tax_amount ?? b?.tax_amount ?? b?.tax ?? 0);
   calculateBill(paid,pays||[]);
 }
 async function calculateBill(paidOverride=null,paymentsOverride=null){
   if(!selectedBillData)return;
   const room=Number($("billRoomTotal").value||0),food=Number($("billFood").value||0),other=Number($("billOther").value||0),discount=Number($("billDiscount").value||0),tax=Number($("billTax").value||0);
   let pays=paymentsOverride;
-  if(pays===null){const r=await supabaseClient.from("payments").select("*").eq("booking_id",selectedBill);pays=r.data||[];}
-  const paid=paidOverride??pays.filter(x=>["paid","completed","success"].includes(String(x.status||"").toLowerCase())).reduce((a,x)=>a+Number(x.amount||0),0);
+  if(pays===null){const r=await supabaseClient.from('payments').select('*').eq('booking_id',selectedBill);pays=r.data||[];}
+  const paid=paidOverride??pays.filter(x=>['paid','completed','success'].includes(String(x.status||'').toLowerCase())).reduce((a,x)=>a+Number(x.amount||0),0);
   const subtotal=room+food+other,total=Math.max(0,subtotal+tax-discount),balance=Math.max(0,total-paid);
-  const guest=selectedBillData.guests||{};
-  const roomName=bookingRoomName(selectedBillData);
-  $("billDocument").innerHTML=`<div class="billhead"><div><h2 style="font:500 24px Georgia,serif">BLUEMIST HOMESTAY</h2><small>Arasinaguppe, Karnataka</small><br><small>Booking: ${esc(selectedBillData.booking_number||"—")}</small><br><small>Invoice: INV-${String(selectedBill).slice(0,8).toUpperCase()}</small></div><div style="text-align:right"><small>Guest</small><br><b>${esc(guest.full_name||"Guest")}</b><br><small>${esc(guest.phone||"")}</small><br><small>${esc(roomName)}</small></div></div><div class="billrow"><span>Stay / Booking</span><b>${money(room)}</b></div><div class="billrow"><span>Food</span><b>${money(food)}</b></div><div class="billrow"><span>Other services</span><b>${money(other)}</b></div><div class="billrow"><span>Tax</span><b>${money(tax)}</b></div><div class="billrow"><span>Discount</span><b>-${money(discount)}</b></div><div class="billrow"><span>Grand Total</span><b class="billtotal">${money(total)}</b></div><div class="billrow"><span>Paid / Advance</span><b>${money(paid)}</b></div><div class="billrow"><span>Balance Due</span><b class="balance">${money(balance)}</b></div><div style="margin-top:16px;color:#777;font-size:10px">Check-in: ${date(selectedBillData.check_in)} · Check-out: ${date(selectedBillData.check_out)} · Status: ${esc(selectedBillData.status)}</div>`;
+  const guest=selectedBillData.guests||{},roomName=bookingRoomName(selectedBillData);
+  $("billDocument").innerHTML=`<div class="billhead"><div><h2 style="font:500 24px Georgia,serif">BLUEMIST HOMESTAY</h2><small>Arasinaguppe, Karnataka</small><br><small>Booking: ${esc(selectedBillData.booking_number||'—')}</small><br><small>Invoice: INV-${String(selectedBill).slice(0,8).toUpperCase()}</small></div><div style="text-align:right"><small>Guest</small><br><b>${esc(guest.full_name||'Guest')}</b><br><small>${esc(guest.phone||'')}</small><br><small>${esc(roomName)}</small></div></div><div class="billrow"><span>Stay / Booking</span><b>${money(room)}</b></div><div class="billrow"><span>Food</span><b>${money(food)}</b></div><div class="billrow"><span>Other services</span><b>${money(other)}</b></div><div class="billrow"><span>Tax</span><b>${money(tax)}</b></div><div class="billrow"><span>Discount</span><b>-${money(discount)}</b></div><div class="billrow"><span>Grand Total</span><b class="billtotal">${money(total)}</b></div><div class="billrow"><span>Paid / Advance</span><b>${money(paid)}</b></div><div class="billrow"><span>Balance Due</span><b class="balance">${money(balance)}</b></div><div style="margin-top:16px;color:#777;font-size:10px">Check-in: ${date(selectedBillData.check_in)} · Check-out: ${date(selectedBillData.check_out)} · Status: ${esc(selectedBillData.status)}</div>`;
   selectedBillData._bill={room,food,other,discount,tax,total,paid,balance,payments:pays};
 }
-async function collectBill(){if(!selectedBillData)return toast("Select a booking first");await calculateBill();if(selectedBillData._bill.balance<=0)return toast("No balance is due");$("paymentAmount").value=selectedBillData._bill.balance;$("paymentBalanceNotice").textContent=`Balance due: ${money(selectedBillData._bill.balance)}`;$("paymentModal").classList.add("open")}
-$("paymentForm").onsubmit=async e=>{e.preventDefault();if(!selectedBill)return;const amount=Number($("paymentAmount").value),method=$("paymentMethod").value,ref=$("paymentReference").value.trim();if(!amount||amount<=0)return toast("Enter a valid amount");const paymentNumber="PAY-"+Date.now().toString().slice(-8);const {error}=await supabaseClient.from("payments").insert({payment_number:paymentNumber,booking_id:selectedBill,amount,method,status:"paid",transaction_reference:ref||null,paid_at:new Date().toISOString(),created_by:currentUser?.id});if(error)return toast(error.message);closeModal("paymentModal");toast("Payment recorded");await openBill(selectedBill);loadPayments();loadBookings();loadCheckinDashboard();loadDashboard()}
+async function collectBill(){if(!selectedBillData)return toast('Select a booking first');await calculateBill();await saveBillingFolio();if(selectedBillData._bill.balance<=0)return toast('No balance is due');$("paymentAmount").value=selectedBillData._bill.balance;$("paymentBalanceNotice").textContent=`Balance due: ${money(selectedBillData._bill.balance)}`;$("paymentModal").classList.add('open')}
+$("paymentForm").onsubmit=async e=>{e.preventDefault();if(!selectedBill)return;const amount=Number($("paymentAmount").value),method=$("paymentMethod").value,ref=$("paymentReference").value.trim();if(!amount||amount<=0)return toast('Enter a valid amount');const paymentNumber='PAY-'+Date.now().toString().slice(-8);const {error}=await supabaseClient.from('payments').insert({payment_number:paymentNumber,booking_id:selectedBill,amount,method,status:'paid',transaction_reference:ref||null,paid_at:new Date().toISOString(),created_by:currentUser?.id});if(error)return toast(error.message);closeModal('paymentModal');toast('Payment recorded');await openBill(selectedBill);await saveBillingFolio();loadPayments();loadBookings();loadCheckinDashboard();loadDashboard()}
 async function clearBill(){
-  if(!selectedBillData)return toast("Select a guest booking first");
+  if(!selectedBillData)return toast('Select a guest booking first');
   await calculateBill();
-  if((selectedBillData._bill?.balance||0)>0)return toast("Balance is still due: "+money(selectedBillData._bill.balance));
-  const {error}=await supabaseClient.from("bookings").update({status:"checked_out"}).eq("id",selectedBill);
+  if((selectedBillData._bill?.balance||0)>0)return toast('Balance is still due: '+money(selectedBillData._bill.balance));
+  await saveBillingFolio();
+  const {error}=await supabaseClient.from('bookings').update({status:'checked_out'}).eq('id',selectedBill);
   if(error)return toast(error.message);
   const roomId=selectedBillData?.booking_rooms?.[0]?.room_id;
-  if(roomId)await supabaseClient.from("rooms").update({status:"cleaning"}).eq("id",roomId);
-  toast("Bill cleared and checkout completed");
-  await openBill(selectedBill);
-  loadBookings();loadCheckinDashboard();loadRooms();loadDashboard();
+  if(roomId)await supabaseClient.from('rooms').update({status:'cleaning'}).eq('id',roomId);
+  await supabaseClient.from('guest_checkin_requests').update({status:'checked_out',checked_out_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('booking_id',selectedBill);
+  await supabaseClient.from('billing_folios').update({status:'closed',updated_by:currentUser?.id||null}).eq('booking_id',selectedBill);
+  toast('Bill cleared and checkout completed');
+  await openBill(selectedBill);loadBookings();loadCheckinDashboard();loadRooms();loadDashboard();loadGuestRequests();
 }
 function billPaid(){return selectedBillData?selectedBillData._bill?.paid||0:0}
-function printBill(){if(!selectedBillData)return toast("Select a booking first");window.print()}
-function whatsappBill(){if(!selectedBillData)return toast("Select a booking first");const b=selectedBillData._bill||{};const phone=(selectedBillData.guests?.phone||"").replace(/\D/g,"");const msg=`Bluemist Homestay%0AInvoice for ${encodeURIComponent(selectedBillData.guests?.full_name||"Guest")}%0ATotal: ${encodeURIComponent(money(b.total))}%0APaid: ${encodeURIComponent(money(b.paid))}%0ABalance: ${encodeURIComponent(money(b.balance))}%0AThank you.`;window.open(`https://wa.me/${phone||"91"}?text=${msg}`,"_blank")}
+function printBill(){if(!selectedBillData)return toast('Select a booking first');window.print()}
+function whatsappBill(){if(!selectedBillData)return toast('Select a booking first');const b=selectedBillData._bill||{},phone=(selectedBillData.guests?.phone||'').replace(/\D/g,'');const msg=`Bluemist Homestay\nInvoice for ${selectedBillData.guests?.full_name||'Guest'}\nTotal: ${money(b.total)}\nPaid: ${money(b.paid)}\nBalance: ${money(b.balance)}\nThank you.`;window.open(`https://wa.me/${phone||'91'}?text=${encodeURIComponent(msg)}`,'_blank')}
 
 async function loadEvents(){const {data,error}=await supabaseClient.from("events").select("*").order("created_at",{ascending:false});$("eventsTable").innerHTML=error?`<tr><td colspan="6">${esc(error.message)}<br><small>Create the events table before using this module.</small></td></tr>`:data?.length?data.map(x=>`<tr><td>${esc(x.event_name||x.name||"—")}</td><td>${esc(x.customer_name||x.customer||"—")}</td><td>${date(x.event_date||x.date)}</td><td>${x.guests||x.guest_count||"—"}</td><td>${badge(x.status||"pending")}</td><td>${money(x.total_amount||x.amount)}</td></tr>`).join(""):`<tr><td colspan="6">No events yet.</td></tr>`}
 function openEventModal(){$("eventDate").value=new Date().toISOString().slice(0,10);$("eventModal").classList.add("open")}
