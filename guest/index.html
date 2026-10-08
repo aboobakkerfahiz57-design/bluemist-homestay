@@ -3167,61 +3167,26 @@ $("serviceForm").addEventListener(
         .value;
 
 
-    const requestNumber =
-      "SR-" +
-      Date.now()
-        .toString()
-        .slice(-9);
-
-
     try{
 
       /*
-        This uses the fields already used by
-        the Bluemist Admin service module:
-
-        request_number
-        title
-        type
-        priority
-        room_id
-        status
-
-        If your service_requests table has
-        additional required columns, Supabase
-        will return the exact database error.
+        The public Guest Portal sends the request
+        through the secure Supabase RPC. The room
+        is resolved from this permanent QR token.
       */
 
       const {
         error
       } =
-        await supabaseClient
-          .from("service_requests")
-          .insert({
-
-            request_number:
-              requestNumber,
-
-            title:
-              serviceTitles[type] ||
-              "Guest Service Request",
-
-            type:
-              type,
-
-            priority:
-              priority,
-
-            room_id:
-              roomContext.room_id,
-
-            status:
-              "new",
-
-            description:
-              message
-
-          });
+        await supabaseClient.rpc(
+          "submit_guest_service_request",
+          {
+            p_token: getQRToken(),
+            p_type: type,
+            p_priority: priority,
+            p_description: message
+          }
+        );
 
 
       if(error){
@@ -3334,52 +3299,26 @@ $("foodForm").addEventListener(
         .trim();
 
 
-    const orderNumber =
-      "FO-" +
-      Date.now()
-        .toString()
-        .slice(-9);
-
-
     try{
 
       /*
-        Food orders are sent to the
-        existing food_orders table.
-
-        The exact kitchen workflow remains
-        controlled by Admin/Kitchen.
+        Food orders are sent through the secure
+        Guest Portal RPC. The room is resolved
+        from this permanent QR token.
       */
 
       const {
         error
       } =
-        await supabaseClient
-          .from("food_orders")
-          .insert({
-
-            order_number:
-              orderNumber,
-
-            room_id:
-              roomContext.room_id,
-
-            meal_period:
-              meal,
-
-            quantity:
-              quantity,
-
-            notes:
-              note || null,
-
-            status:
-              "new",
-
-            total_amount:
-              0
-
-          });
+        await supabaseClient.rpc(
+          "submit_guest_food_request",
+          {
+            p_token: getQRToken(),
+            p_meal_period: meal,
+            p_quantity: quantity,
+            p_notes: note || null
+          }
+        );
 
 
       if(error){
