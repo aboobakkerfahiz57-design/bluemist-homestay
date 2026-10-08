@@ -272,9 +272,67 @@ async function loadLatestInquiries(){const {data,error}=await supabaseClient.fro
 async function loadRoomStatus(){const {data,error}=await supabaseClient.from("rooms").select("*").eq("is_active",true).order("room_number");if(error)return $("roomStatusList").innerHTML=`<div class="empty">${esc(error.message)}</div>`;$("roomStatusList").innerHTML=data?.length?data.slice(0,8).map(x=>`<div class="listrow"><div><strong>Room ${esc(x.room_number)}</strong><small>${esc(x.room_name)}</small></div>${badge(x.status)}</div>`).join(""):`<div class="empty">No rooms.</div>`}
 
 async function loadInquiries(){const {data,error}=await supabaseClient.from("inquiries").select("*,rooms(room_number,room_name)").order("created_at",{ascending:false});if(error)return $("inquiriesTable").innerHTML=`<tr><td colspan="7">${esc(error.message)}</td></tr>`;inquiriesData=data||[];renderInquiries(inquiriesData)}
-function renderInquiries(d){$("inquiriesTable").innerHTML=d.length?d.map(x=>`<tr><td><b>${esc(x.inquiry_number)}</b><br><small>${dt(x.created_at)}</small></td><td><b>${esc(x.guest_name)}</b><br>${esc(x.phone)}</td><td>${date(x.check_in)} → ${date(x.check_out)}</td><td>${x.guests??"—"}</td><td>${x.rooms?esc(x.rooms.room_name):"Any room"}</td><td><select onchange="updateInquiryStatus('${x.id}',this.value)">${inquiryOptions(x.status)}</select></td><td><button class="action" onclick="viewInquiry('${x.id}')">View</button></td></tr>`).join(""):`<tr><td colspan="7">No inquiries found.</td></tr>`}
+function renderInquiries(d){
+  $("inquiriesTable").innerHTML=d.length?d.map(x=>{
+    const isFinal=["confirmed","cancelled"].includes(String(x.status||"").toLowerCase());
+    return `<tr>
+      <td><b>${esc(x.inquiry_number)}</b><br><small>${dt(x.created_at)}</small></td>
+      <td><b>${esc(x.guest_name)}</b><br>${esc(x.phone)}</td>
+      <td>${date(x.check_in)} → ${date(x.check_out)}</td>
+      <td>${x.guests??"—"}</td>
+      <td>${x.rooms?esc(x.rooms.room_name):"Any room"}</td>
+      <td><select onchange="updateInquiryStatus('${x.id}',this.value)">${inquiryOptions(x.status)}</select></td>
+      <td><div class="actions">
+        <button class="action" onclick="viewInquiry('${x.id}')">View</button>
+        ${x.status==="confirmed" ? `<button class="action" onclick="openInquiryBooking('${x.id}')">Booking</button>` : ""}
+        <button class="action" onclick="inquiryWhatsApp('${x.id}')">WhatsApp</button>
+      </div></td>
+    </tr>`;
+  }).join(""):`<tr><td colspan="7">No inquiries found.</td></tr>`;
+}
 function inquiryOptions(cur){return [["new","New"],["viewed","Viewed"],["contacted","Contacted"],["following_up","Following Up"],["confirmed","Confirmed"],["cancelled","Cancelled"]].map(x=>`<option value="${x[0]}" ${cur===x[0]?"selected":""}>${x[1]}</option>`).join("")}
-async function updateInquiryStatus(id,status){const {error}=await supabaseClient.from("inquiries").update({status}).eq("id",id);if(error)return toast(error.message);toast("Inquiry updated");loadInquiries();loadDashboard()}
+async function updateInquiryStatus(id,status){
+  const x=inquiriesData.find(a=>a.id===id);
+  if(!x)return;
+  if(status==="confirmed"){
+    const {data,error}=await supabaseClient.rpc("confirm_inquiry_and_create_booking",{p_inquiry_id:id});
+    if(error){toast(error.message);loadInquiries();return;}
+    toast("Inquiry confirmed — booking created.");
+    loadInquiries();loadBookings();loadCheckinDashboard();loadRooms();loadDashboard();
+    if(data?.booking_id){
+      await showPage("bookings");
+      setTimeout(()=>openBill(data.booking_id),150);
+    }
+    inquiryWhatsApp(id,"confirmed");
+    return;
+  }
+  const {error}=await supabaseClient.from("inquiries").update({status}).eq("id",id);
+  if(error){toast(error.message);loadInquiries();return;}
+  toast("Inquiry updated");
+  loadInquiries();loadDashboard();
+  if(status==="cancelled") inquiryWhatsApp(id,"cancelled");
+}
+function inquiryWhatsApp(id,forcedStatus=null){
+  const x=inquiriesData.find(a=>a.id===id);if(!x)return;
+  const phone=String(x.phone||"").replace(/\D/g,"");if(!phone)return toast("Customer phone number is missing.");
+  const status=forcedStatus||x.status;
+  let msg="";
+  if(status==="confirmed"){
+    msg=`Hi ${x.guest_name}, thank you for choosing Bluemist Homestay. Your stay is confirmed for ${date(x.check_in)} to ${date(x.check_out)}. We look forward to welcoming you to Bluemist Homestay. If you need any assistance before arrival, please contact our reception.`;
+  }else if(status==="cancelled"){
+    msg=`Hi ${x.guest_name}, this is Bluemist Homestay reception. Your inquiry has been marked as cancelled. If you would like to change the dates or make a new request, please contact us and we will be happy to assist you. Thank you.`;
+  }else{
+    msg=`Hi ${x.guest_name}, this is Bluemist Homestay reception regarding your stay inquiry. We have received your request and will contact you shortly. Thank you.`;
+  }
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,"_blank");
+}
+async function openInquiryBooking(id){
+  const {data,error}=await supabaseClient.from("bookings").select("id").eq("inquiry_id",id).maybeSingle();
+  if(error)return toast(error.message);
+  if(!data?.id)return toast("No booking has been created for this inquiry yet.");
+  await showPage("bookings");
+  setTimeout(()=>openBill(data.id),100);
+}
 function filterInquiries(){let q=$("inquirySearch").value.toLowerCase(),s=$("inquiryStatusFilter").value;renderInquiries(inquiriesData.filter(x=>(!q||`${x.guest_name} ${x.phone} ${x.inquiry_number}`.toLowerCase().includes(q))&&(!s||x.status===s)))}
 $("inquiryStatusFilter").onchange=filterInquiries;
 function viewInquiry(id){let x=inquiriesData.find(a=>a.id===id);if(!x)return;alert(`INQUIRY ${x.inquiry_number}\n\nGuest: ${x.guest_name}\nPhone: ${x.phone}\nEmail: ${x.email||"—"}\nCheck-in: ${x.check_in||"—"}\nCheck-out: ${x.check_out||"—"}\nGuests: ${x.guests||"—"}\nMessage: ${x.message||"—"}`)}
@@ -334,10 +392,21 @@ async function loadCheckinDashboard(){
   $("checkinCount").textContent=rows.length;
   $("checkinCheckedCount").textContent=rows.filter(x=>x.status==="checked_in").length;
   $("checkinPendingCount").textContent=rows.filter(x=>["pending","confirmed"].includes(x.status)).length;
-  $("checkinsTable").innerHTML=rows.length?rows.map(x=>`<tr><td><b>${esc(x.guests?.full_name||"Guest")}</b></td><td>${esc(x.guests?.phone||"—")}</td><td>${esc(x.booking_rooms?.[0]?.rooms?.room_number||"—")}</td><td>${date(x.check_in)}</td><td>${date(x.check_out)}</td><td>${x.guests_count??x.guest_count??x.guests??"—"}</td><td>${badge(x.status)}</td><td><div class="actions"><button class="action" onclick="openBill('${x.id}')">Bill</button>${x.status!=="checked_in"&&x.status!=="checked_out"?`<button class="action" onclick="updateBookingStatus('${x.id}','checked_in')">Check-in</button>`:""}</div></td></tr>`).join(""):`<tr><td colspan="8">No bookings for this date.</td></tr>`;
+  $("checkinsTable").innerHTML=rows.length?rows.map(x=>`<tr><td><b>${esc(x.guests?.full_name||"Guest")}</b></td><td>${esc(x.guests?.phone||"—")}</td><td>${esc(x.booking_rooms?.[0]?.rooms?.room_number||"—")}</td><td>${date(x.check_in)}</td><td>${date(x.check_out)}</td><td>${x.guests_count??x.guest_count??x.guests??"—"}</td><td>${badge(x.status)}</td><td><div class="actions"><button class="action" onclick="openBill('${x.id}')">Bill</button>${x.status!=="checked_in"&&x.status!=="checked_out"&&x.status!=="cancelled"?`<button class="action" onclick="updateBookingStatus('${x.id}','checked_in')">Check-in</button>`:""}${x.status==="checked_in"?`<button class="action" onclick="checkoutBooking('${x.id}')">Checkout</button>`:""}</div></td></tr>`).join(""):`<tr><td colspan="8">No bookings for this date.</td></tr>`;
 }
 
 
+async function checkoutBooking(id){
+  selectedBill=id;
+  await openBill(id);
+  await calculateBill();
+  if((selectedBillData?._bill?.balance||0)>0){
+    toast("Balance due: "+money(selectedBillData._bill.balance)+". Collect payment before checkout.");
+    await showPage("billing");
+    return;
+  }
+  await clearBill();
+}
 async function loadRooms(){const {data,error}=await supabaseClient.from("rooms").select("*,room_types(name)").eq("is_active",true).order("room_number");if(error)return $("roomsGrid").innerHTML=`<div class="empty">${esc(error.message)}</div>`;roomsData=data||[];$("roomsGrid").innerHTML=roomsData.length?roomsData.map(r=>`<div class="room"><div class="roomnum">Room ${esc(r.room_number)}</div><h3>${esc(r.room_name)}</h3>${badge(r.status)}<div class="roommeta"><span>Capacity ${r.capacity}</span><b>${money(r.base_price)}</b></div><div class="actions" style="margin-top:12px"><button class="action" onclick="setRoomStatus('${r.id}','available')">Available</button><button class="action" onclick="setRoomStatus('${r.id}','cleaning')">Cleaning</button><button class="action" onclick="setRoomStatus('${r.id}','maintenance')">Maintenance</button></div></div>`).join(""):`<div class="empty">No rooms.</div>`}
 async function setRoomStatus(id,status){const {error}=await supabaseClient.from("rooms").update({status}).eq("id",id);if(error)return toast(error.message);toast("Room status updated");loadRooms();loadDashboard()}
 
@@ -395,15 +464,16 @@ async function viewGuestDetails(id){
   alert(`GUEST DETAILS\n\nName: ${g.full_name}\nPhone: ${g.phone||'—'}\nEmail: ${g.email||'—'}\nID Type: ${g.id_type||'—'}\nNationality: ${g.nationality||'—'}\n\nRoom: ${r?.rooms?.room_number||'—'}\nBooking: ${b?.booking_number||'—'}\nStatus: ${b?.status||r?.status||'—'}\nCheck-in: ${b?.check_in||'—'}\nCheck-out: ${b?.check_out||'—'}\nTotal: ${money(b?.total_amount||0)}`);
 }
 async function viewGuestID(guestId){
-  const {data,error}=await supabaseClient.from('guest_id_documents').select('*').eq('guest_id',guestId).order('created_at',{ascending:true});
-  if(error)return toast(error.message);
-  if(!data?.length)return toast('No ID proof uploaded for this guest.');
-  let message='ID proofs for this guest:\n\n';
+  const {data,error}=await supabaseClient.from("guest_id_documents").select("*").eq("guest_id",guestId).order("created_at",{ascending:true});
+  if(error)return toast("ID proof access error: "+error.message);
+  if(!data?.length)return toast("No ID proof uploaded for this guest.");
+  let opened=0;
   for(const doc of data){
-    const r=await supabaseClient.storage.from('guest-id-documents').createSignedUrl(doc.storage_path,600);
-    if(r.data?.signedUrl){window.open(r.data.signedUrl,'_blank');message+=`${doc.side||'front'}: opened\n`;}
+    const r=await supabaseClient.storage.from("guest-id-documents").createSignedUrl(doc.storage_path,600);
+    if(r.error){console.error(r.error);continue;}
+    if(r.data?.signedUrl){window.open(r.data.signedUrl,"_blank");opened++;}
   }
-  toast('ID proof opened in a new tab.');
+  toast(opened?`Opened ${opened} ID proof file${opened>1?"s":""}.`:"ID proof file could not be opened.");
 }
 async function guestBooking(guestId){
   const {data:rs,error}=await supabaseClient.from('guest_checkin_requests').select('booking_id').eq('guest_id',guestId).not('booking_id','is',null).order('requested_at',{ascending:false}).limit(1);
