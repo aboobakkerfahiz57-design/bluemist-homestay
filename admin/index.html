@@ -15,6 +15,30 @@
 #toast{position:fixed;right:20px;bottom:20px;background:var(--dark);color:#fff;padding:12px 15px;border-radius:10px;font-size:11px;z-index:200;opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}#toast.show{opacity:1;transform:none}
 @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.roomgrid{grid-template-columns:repeat(2,1fr)}.quickgrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:800px){.sidebar{transform:translateX(-100%);transition:.2s}.sidebar.open{transform:none}.main{margin-left:0;width:100%}.mobile{display:block}.topbar{padding:0 15px}.content{padding:19px 14px}.grid2{grid-template-columns:1fr}.online{display:none}}@media(max-width:600px){.stats,.roomgrid,.quickgrid{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.full{grid-column:auto}.login-card{padding:28px 22px}.topbar p{display:none}.welcome{align-items:flex-start;flex-direction:column;gap:12px}}
 @media print{body{background:#fff}.sidebar,.topbar,.no-print{display:none!important}.main{margin:0;width:100%}.content{padding:0}.page{display:none!important}#page-billing{display:block!important}.billbox{border:0}}
+
+/* ================= STAFF & ATTENDANCE ================= */
+.staff-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.staff-toolbar .left{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.staff-tabs{display:flex;gap:7px;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.staff-tab{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 13px;font-weight:700;color:var(--muted)}
+.staff-tab.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.staff-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.staff-summary .stat{min-height:82px}
+.staff-mini{font-size:10px;color:var(--muted);line-height:1.5}
+.staff-name{display:flex;align-items:center;gap:9px}
+.staff-avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#eef1ea;color:var(--dark);font-weight:800;font-size:11px;flex:none}
+.staff-actions{display:flex;gap:6px;flex-wrap:wrap}
+.staff-actions .action{font-size:10px;padding:7px 9px}
+.attendance-action{border:0;background:var(--dark);color:#fff;border-radius:8px;padding:7px 9px;font-size:10px;font-weight:700}
+.attendance-action.secondary-action{background:#fff;color:var(--dark);border:1px solid var(--line)}
+.attendance-status{display:inline-flex;align-items:center;gap:5px}
+.staff-empty{padding:28px;text-align:center;color:var(--muted)}
+.staff-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.staff-detail{border:1px solid var(--line);border-radius:11px;padding:11px;background:#fafaf7}
+.staff-detail small{display:block;color:var(--muted);font-size:9px;margin-bottom:4px}
+.staff-detail b{font-size:12px}
+@media(max-width:800px){.staff-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.staff-detail-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.staff-summary{grid-template-columns:1fr}.staff-tabs{overflow:auto}.staff-tab{white-space:nowrap}}
 </style>
 </head>
 <body>
@@ -140,7 +164,51 @@
 <div class="tablebox"><div class="tablewrap"><table><thead><tr><th>QR</th><th>Room</th><th>Name</th><th>Guest Portal</th><th>Scans</th><th>Status</th><th>Actions</th></tr></thead><tbody id="qrTable"><tr><td colspan="7"><div class="empty">Loading QR codes...</div></td></tr></tbody></table></div></div>
 </section>
 
-<section class="page" id="page-staff"><div class="heading"><h1>Staff</h1><p>Team members and roles. Auth account creation must be handled server-side.</p></div><div class="tablebox"><div class="tablewrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Job Title</th><th>Status</th><th>Last Login</th></tr></thead><tbody id="staffTable"></tbody></table></div></div></section>
+<section class="page" id="page-staff">
+<div class="heading"><h1>Staff & Attendance</h1><p>Manage every Bluemist employee, their department, status and daily attendance. Employees do not need a system login.</p></div>
+
+<div class="staff-toolbar">
+  <div class="left">
+    <input class="search" id="staffSearch" placeholder="Search staff name, phone or employee ID..." style="min-width:260px">
+    <select class="toolbar select" id="staffDepartmentFilter" style="width:auto;min-width:160px">
+      <option value="">All Departments</option>
+      <option value="reception">Reception</option>
+      <option value="housekeeping">Housekeeping</option>
+      <option value="kitchen">Kitchen</option>
+      <option value="service">Service</option>
+      <option value="maintenance">Maintenance</option>
+      <option value="security">Security</option>
+      <option value="driver">Driver</option>
+      <option value="management">Management</option>
+      <option value="other">Other</option>
+    </select>
+  </div>
+  <button class="primary" onclick="openStaffModal()">+ Add Staff</button>
+</div>
+
+<div class="staff-tabs">
+  <button class="staff-tab active" id="staffTabDirectory" onclick="switchStaffTab('directory')">Staff Directory</button>
+  <button class="staff-tab" id="staffTabAttendance" onclick="switchStaffTab('attendance')">Today's Attendance</button>
+</div>
+
+<div id="staffDirectoryView">
+  <div class="staff-summary">
+    <div class="stat"><small>Total Staff</small><strong id="staffTotal">0</strong></div>
+    <div class="stat"><small>Active</small><strong id="staffActive">0</strong></div>
+    <div class="stat"><small>Present Today</small><strong id="staffPresent">0</strong></div>
+    <div class="stat"><small>Absent Today</small><strong id="staffAbsent">0</strong></div>
+  </div>
+  <div class="tablebox"><div class="tablewrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Job Title</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead><tbody id="staffTable"></tbody></table></div></div>
+</div>
+
+<div id="staffAttendanceView" class="hidden">
+  <div class="toolbar" style="margin-bottom:12px">
+    <div class="left"><input class="search" id="attendanceSearch" placeholder="Search employee..."></div>
+    <button class="secondary" onclick="loadStaffAttendance()">↻ Refresh</button>
+  </div>
+  <div class="tablebox"><div class="tablewrap"><table><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Actions</th></tr></thead><tbody id="attendanceTable"></tbody></table></div></div>
+</div>
+</section>
 
 <section class="page" id="page-reports"><div class="heading"><h1>Reports & Analytics</h1><p>Revenue, expenses, bookings and occupancy.</p></div><div class="stats"><div class="stat"><small>Today's Revenue</small><strong id="reportRevenue">₹0</strong></div><div class="stat"><small>Today's Expenses</small><strong id="reportExpenses">₹0</strong></div><div class="stat"><small>Active Bookings</small><strong id="reportBookings">—</strong></div><div class="stat"><small>Occupancy</small><strong id="reportOccupancy">—</strong></div></div><div class="panel"><div class="panelhead"><h3>Daily Revenue</h3></div><div id="revenueList"></div></div></section>
 
@@ -149,6 +217,53 @@
 </div><div class="formactions"><button class="primary">Save Settings</button></div></form></div></section>
 
 </div></main></div></section>
+
+<div class="modal" id="staffModal">
+<div class="modalbox">
+<div class="modalhead"><h2 id="staffModalTitle">Add Staff</h2><button class="close" onclick="closeModal('staffModal')">×</button></div>
+<form id="staffForm">
+<input type="hidden" id="staffId">
+<div class="formgrid">
+<div class="field"><label>Employee ID</label><input id="staffEmployeeCode" placeholder="BLM-001"></div>
+<div class="field"><label>Full name</label><input id="staffFullName" required placeholder="Employee full name"></div>
+<div class="field"><label>Phone</label><input id="staffPhone" placeholder="Optional"></div>
+<div class="field"><label>Email</label><input id="staffEmail" type="email" placeholder="Optional"></div>
+<div class="field"><label>Department</label><select id="staffDepartment"><option value="reception">Reception</option><option value="housekeeping">Housekeeping</option><option value="kitchen">Kitchen</option><option value="service">Service</option><option value="maintenance">Maintenance</option><option value="security">Security</option><option value="driver">Driver</option><option value="management">Management</option><option value="other">Other</option></select></div>
+<div class="field"><label>Job title</label><input id="staffJobTitle" placeholder="Cleaner, Cook, Receptionist..."></div>
+<div class="field"><label>Joining date</label><input id="staffJoiningDate" type="date"></div>
+<div class="field"><label>Status</label><select id="staffStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+<div class="field full"><label>Address</label><textarea id="staffAddress" rows="2" placeholder="Optional"></textarea></div>
+<div class="field"><label>Emergency contact name</label><input id="staffEmergencyName"></div>
+<div class="field"><label>Emergency contact phone</label><input id="staffEmergencyPhone"></div>
+<div class="field full"><label>Notes</label><textarea id="staffNotes" rows="2" placeholder="Any staff notes"></textarea></div>
+</div>
+<div class="formactions"><button type="button" class="secondary" onclick="closeModal('staffModal')">Cancel</button><button class="primary" id="staffSaveButton">Save Staff</button></div>
+</form>
+</div></div>
+
+<div class="modal" id="staffDetailModal">
+<div class="modalbox">
+<div class="modalhead"><h2>Staff Details</h2><button class="close" onclick="closeModal('staffDetailModal')">×</button></div>
+<div id="staffDetailContent"></div>
+<div class="formactions"><button class="secondary" onclick="closeModal('staffDetailModal')">Close</button></div>
+</div></div>
+
+<div class="modal" id="attendanceModal">
+<div class="modalbox">
+<div class="modalhead"><h2 id="attendanceModalTitle">Mark Attendance</h2><button class="close" onclick="closeModal('attendanceModal')">×</button></div>
+<form id="attendanceForm">
+<input type="hidden" id="attendanceStaffId">
+<div class="notice" id="attendanceStaffNotice"></div>
+<div class="formgrid">
+<div class="field"><label>Date</label><input id="attendanceDate" type="date" required></div>
+<div class="field"><label>Attendance</label><select id="attendanceStatus"><option value="present">Present</option><option value="absent">Absent</option><option value="half_day">Half Day</option><option value="leave">Leave</option></select></div>
+<div class="field"><label>Check-in time</label><input id="attendanceCheckIn" type="time"></div>
+<div class="field"><label>Check-out time</label><input id="attendanceCheckOut" type="time"></div>
+<div class="field full"><label>Notes</label><textarea id="attendanceNotes" rows="2" placeholder="Optional"></textarea></div>
+</div>
+<div class="formactions"><button type="button" class="secondary" onclick="closeModal('attendanceModal')">Cancel</button><button class="primary">Save Attendance</button></div>
+</form>
+</div></div>
 
 <div class="modal" id="expenseModal"><div class="modalbox"><div class="modalhead"><h2>Add Expense</h2><button class="close" onclick="closeExpenseModal()">×</button></div><form id="expenseForm"><div class="formgrid">
 <div class="field"><label>Category</label><select id="expenseCategory"><option>maintenance</option><option>housekeeping</option><option>kitchen</option><option>food</option><option>utilities</option><option>salary</option><option>supplies</option><option>marketing</option><option>transport</option><option>repair</option><option>other</option></select></div>
@@ -515,7 +630,284 @@ async function toggleQR(id,nextActive){
   loadQRCodes();
 }
 
-async function loadStaff(){const {data,error}=await supabaseClient.from("profiles").select("*").order("created_at",{ascending:false});if(error)return $("staffTable").innerHTML=`<tr><td colspan="6">${esc(error.message)}</td></tr>`;$("staffTable").innerHTML=data?.length?data.map(x=>`<tr><td><b>${esc(x.full_name||"Unnamed")}</b></td><td>${esc(x.phone||"—")}</td><td>${badge(x.role)}</td><td>${esc(x.job_title||"—")}</td><td>${badge(x.status)}</td><td>${dt(x.last_login_at)}</td></tr>`).join(""):`<tr><td colspan="6">No staff profiles.</td></tr>`}
+let staffData=[];
+let staffAttendanceData=[];
+
+function staffInitials(name){
+  return String(name||"Staff").split(/\s+/).filter(Boolean).map(x=>x[0]).join("").slice(0,2).toUpperCase();
+}
+
+function departmentLabel(value){
+  return String(value||"other").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+function localTimeValue(value){
+  if(!value)return "";
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime()))return "";
+  return d.toTimeString().slice(0,5);
+}
+
+function todayISO(){
+  const d=new Date();
+  const off=d.getTimezoneOffset();
+  return new Date(d.getTime()-off*60000).toISOString().slice(0,10);
+}
+
+function switchStaffTab(tab){
+  const directory=tab==="directory";
+  $("staffDirectoryView").classList.toggle("hidden",!directory);
+  $("staffAttendanceView").classList.toggle("hidden",directory);
+  $("staffTabDirectory").classList.toggle("active",directory);
+  $("staffTabAttendance").classList.toggle("active",!directory);
+  if(!directory)loadStaffAttendance();
+}
+
+async function loadStaff(){
+  const {data,error}=await supabaseClient
+    .from("staff_members")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    $("staffTable").innerHTML=`<tr><td colspan="6"><div class="staff-empty">${esc(error.message)}</div></td></tr>`;
+    return;
+  }
+
+  staffData=data||[];
+  const q=($("staffSearch")?.value||"").trim().toLowerCase();
+  const dep=$("staffDepartmentFilter")?.value||"";
+  const filtered=staffData.filter(x=>{
+    const hay=[x.full_name,x.phone,x.employee_code,x.email,x.job_title,x.department].join(" ").toLowerCase();
+    return (!q||hay.includes(q))&&(!dep||x.department===dep);
+  });
+
+  $("staffTotal").textContent=staffData.length;
+  $("staffActive").textContent=staffData.filter(x=>x.status==="active").length;
+
+  const {data:todayAttendance}=await supabaseClient
+    .from("staff_attendance")
+    .select("staff_id,status,check_in,check_out")
+    .eq("attendance_date",todayISO());
+
+  const todayMap=new Map((todayAttendance||[]).map(x=>[x.staff_id,x]));
+  $("staffPresent").textContent=(todayAttendance||[]).filter(x=>x.status==="present").length;
+  $("staffAbsent").textContent=(todayAttendance||[]).filter(x=>x.status==="absent").length;
+
+  $("staffTable").innerHTML=filtered.length?filtered.map(x=>{
+    const a=todayMap.get(x.id);
+    const att=a?badge(a.status):'<span class="badge gray">Not marked</span>';
+    return `<tr>
+      <td><div class="staff-name"><span class="staff-avatar">${esc(staffInitials(x.full_name))}</span><div><b>${esc(x.full_name)}</b><div class="staff-mini">${esc(x.employee_code||"No employee ID")}</div></div></div></td>
+      <td>${esc(departmentLabel(x.department))}</td>
+      <td>${esc(x.job_title||"—")}</td>
+      <td>${esc(x.phone||"—")}</td>
+      <td>${badge(x.status)}<div class="staff-mini" style="margin-top:3px">${att}</div></td>
+      <td><div class="staff-actions">
+        <button class="action" onclick="viewStaff('${x.id}')">View</button>
+        <button class="action" onclick="editStaff('${x.id}')">Edit</button>
+        <button class="action" onclick="openAttendanceModal('${x.id}')">Attendance</button>
+        <button class="action danger" onclick="deleteStaff('${x.id}')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join(""):`<tr><td colspan="6"><div class="staff-empty">No staff employees found. Click <b>+ Add Staff</b> to create the first employee.</div></td></tr>`;
+}
+
+function resetStaffForm(){
+  $("staffId").value="";
+  $("staffEmployeeCode").value="";
+  $("staffFullName").value="";
+  $("staffPhone").value="";
+  $("staffEmail").value="";
+  $("staffDepartment").value="reception";
+  $("staffJobTitle").value="";
+  $("staffJoiningDate").value=todayISO();
+  $("staffStatus").value="active";
+  $("staffAddress").value="";
+  $("staffEmergencyName").value="";
+  $("staffEmergencyPhone").value="";
+  $("staffNotes").value="";
+}
+
+function openStaffModal(){
+  resetStaffForm();
+  $("staffModalTitle").textContent="Add Staff Employee";
+  $("staffSaveButton").textContent="Save Staff";
+  $("staffModal").classList.add("open");
+}
+
+function editStaff(id){
+  const x=staffData.find(s=>s.id===id);
+  if(!x)return toast("Staff member not found");
+  $("staffId").value=x.id;
+  $("staffEmployeeCode").value=x.employee_code||"";
+  $("staffFullName").value=x.full_name||"";
+  $("staffPhone").value=x.phone||"";
+  $("staffEmail").value=x.email||"";
+  $("staffDepartment").value=x.department||"other";
+  $("staffJobTitle").value=x.job_title||"";
+  $("staffJoiningDate").value=x.joining_date||"";
+  $("staffStatus").value=x.status||"active";
+  $("staffAddress").value=x.address||"";
+  $("staffEmergencyName").value=x.emergency_contact_name||"";
+  $("staffEmergencyPhone").value=x.emergency_contact_phone||"";
+  $("staffNotes").value=x.notes||"";
+  $("staffModalTitle").textContent="Edit Staff Employee";
+  $("staffSaveButton").textContent="Save Changes";
+  $("staffModal").classList.add("open");
+}
+
+$("staffForm").onsubmit=async e=>{
+  e.preventDefault();
+  const button=$("staffSaveButton");
+  button.disabled=true;
+  button.textContent="Saving...";
+  const id=$("staffId").value||null;
+  const row={
+    employee_code:$("staffEmployeeCode").value.trim()||null,
+    full_name:$("staffFullName").value.trim(),
+    phone:$("staffPhone").value.trim()||null,
+    email:$("staffEmail").value.trim()||null,
+    department:$("staffDepartment").value,
+    job_title:$("staffJobTitle").value.trim()||null,
+    joining_date:$("staffJoiningDate").value||null,
+    status:$("staffStatus").value,
+    address:$("staffAddress").value.trim()||null,
+    emergency_contact_name:$("staffEmergencyName").value.trim()||null,
+    emergency_contact_phone:$("staffEmergencyPhone").value.trim()||null,
+    notes:$("staffNotes").value.trim()||null
+  };
+
+  let result;
+  if(id){
+    result=await supabaseClient.from("staff_members").update(row).eq("id",id);
+  }else{
+    row.created_by=currentUser?.id||null;
+    result=await supabaseClient.from("staff_members").insert(row);
+  }
+
+  if(result.error){
+    button.disabled=false;
+    button.textContent=id?"Save Changes":"Save Staff";
+    return toast(result.error.message);
+  }
+
+  closeModal("staffModal");
+  button.disabled=false;
+  button.textContent="Save Staff";
+  toast(id?"Staff details updated":"Staff employee added");
+  loadStaff();
+};
+
+async function deleteStaff(id){
+  const x=staffData.find(s=>s.id===id);
+  if(!x)return;
+  if(!confirm(`Delete ${x.full_name}? This will also remove their attendance records.`))return;
+  const {error}=await supabaseClient.from("staff_members").delete().eq("id",id);
+  if(error)return toast(error.message);
+  toast("Staff employee deleted");
+  loadStaff();
+}
+
+function viewStaff(id){
+  const x=staffData.find(s=>s.id===id);
+  if(!x)return;
+  $("staffDetailContent").innerHTML=`
+    <div class="staff-detail-grid">
+      <div class="staff-detail"><small>Employee ID</small><b>${esc(x.employee_code||"—")}</b></div>
+      <div class="staff-detail"><small>Status</small><b>${badge(x.status)}</b></div>
+      <div class="staff-detail"><small>Full Name</small><b>${esc(x.full_name||"—")}</b></div>
+      <div class="staff-detail"><small>Department</small><b>${esc(departmentLabel(x.department))}</b></div>
+      <div class="staff-detail"><small>Job Title</small><b>${esc(x.job_title||"—")}</b></div>
+      <div class="staff-detail"><small>Phone</small><b>${esc(x.phone||"—")}</b></div>
+      <div class="staff-detail"><small>Email</small><b>${esc(x.email||"—")}</b></div>
+      <div class="staff-detail"><small>Joining Date</small><b>${esc(x.joining_date||"—")}</b></div>
+      <div class="staff-detail"><small>Emergency Contact</small><b>${esc(x.emergency_contact_name||"—")}</b></div>
+      <div class="staff-detail"><small>Emergency Phone</small><b>${esc(x.emergency_contact_phone||"—")}</b></div>
+      <div class="staff-detail full" style="grid-column:1/-1"><small>Address</small><b>${esc(x.address||"—")}</b></div>
+      <div class="staff-detail" style="grid-column:1/-1"><small>Notes</small><b>${esc(x.notes||"—")}</b></div>
+    </div>`;
+  $("staffDetailModal").classList.add("open");
+}
+
+function openAttendanceModal(id){
+  const x=staffData.find(s=>s.id===id);
+  if(!x)return toast("Staff member not found");
+  $("attendanceStaffId").value=id;
+  $("attendanceDate").value=todayISO();
+  $("attendanceStatus").value="present";
+  $("attendanceCheckIn").value="";
+  $("attendanceCheckOut").value="";
+  $("attendanceNotes").value="";
+  $("attendanceStaffNotice").textContent=`${x.full_name} · ${departmentLabel(x.department)}${x.job_title?" · "+x.job_title:""}`;
+  $("attendanceModalTitle").textContent="Mark Attendance — "+x.full_name;
+  loadExistingAttendance(id,todayISO());
+  $("attendanceModal").classList.add("open");
+}
+
+async function loadExistingAttendance(staffId,date){
+  const {data,error}=await supabaseClient.from("staff_attendance").select("*").eq("staff_id",staffId).eq("attendance_date",date).maybeSingle();
+  if(error)return;
+  if(!data)return;
+  $("attendanceStatus").value=data.status||"present";
+  $("attendanceCheckIn").value=localTimeValue(data.check_in);
+  $("attendanceCheckOut").value=localTimeValue(data.check_out);
+  $("attendanceNotes").value=data.notes||"";
+}
+
+$("attendanceForm").onsubmit=async e=>{
+  e.preventDefault();
+  const staffId=$("attendanceStaffId").value;
+  const date=$("attendanceDate").value;
+  if(!staffId||!date)return toast("Select staff and date");
+  const ci=$("attendanceCheckIn").value;
+  const co=$("attendanceCheckOut").value;
+  const row={
+    staff_id:staffId,
+    attendance_date:date,
+    status:$("attendanceStatus").value,
+    check_in:ci?`${date}T${ci}:00`:null,
+    check_out:co?`${date}T${co}:00`:null,
+    marked_by:currentUser?.id||null,
+    notes:$("attendanceNotes").value.trim()||null
+  };
+  const {error}=await supabaseClient.from("staff_attendance").upsert(row,{onConflict:"staff_id,attendance_date"});
+  if(error)return toast(error.message);
+  closeModal("attendanceModal");
+  toast("Attendance saved");
+  loadStaff();
+  loadStaffAttendance();
+};
+
+async function loadStaffAttendance(){
+  const date=todayISO();
+  const {data,error}=await supabaseClient
+    .from("staff_members")
+    .select("id,employee_code,full_name,department,job_title,status")
+    .eq("status","active")
+    .order("full_name");
+  if(error)return $("attendanceTable").innerHTML=`<tr><td colspan="6"><div class="staff-empty">${esc(error.message)}</div></td></tr>`;
+  const {data:att,error:attError}=await supabaseClient
+    .from("staff_attendance")
+    .select("*")
+    .eq("attendance_date",date);
+  if(attError)return $("attendanceTable").innerHTML=`<tr><td colspan="6"><div class="staff-empty">${esc(attError.message)}</div></td></tr>`;
+  const map=new Map((att||[]).map(x=>[x.staff_id,x]));
+  const q=($("attendanceSearch")?.value||"").trim().toLowerCase();
+  const filtered=(data||[]).filter(x=>!q||[x.full_name,x.employee_code,x.department,x.job_title].join(" ").toLowerCase().includes(q));
+  $("attendanceTable").innerHTML=filtered.length?filtered.map(x=>{
+    const a=map.get(x.id);
+    const status=a?badge(a.status):'<span class="badge gray">Not marked</span>';
+    const ci=a?.check_in?dt(a.check_in):"—";
+    const co=a?.check_out?dt(a.check_out):"—";
+    return `<tr><td><div class="staff-name"><span class="staff-avatar">${esc(staffInitials(x.full_name))}</span><div><b>${esc(x.full_name)}</b><div class="staff-mini">${esc(x.employee_code||"")}</div></div></div></td><td>${esc(departmentLabel(x.department))}</td><td>${status}</td><td>${ci}</td><td>${co}</td><td><button class="attendance-action" onclick="openAttendanceModal('${x.id}')">${a?"Edit Attendance":"Mark Attendance"}</button></td></tr>`;
+  }).join(""):`<tr><td colspan="6"><div class="staff-empty">No active staff employees.</div></td></tr>`;
+}
+
+$("staffSearch")?.addEventListener("input",()=>loadStaff());
+$("staffDepartmentFilter")?.addEventListener("change",()=>loadStaff());
+$("attendanceSearch")?.addEventListener("input",()=>loadStaffAttendance());
+
 
 async function loadReports(){const {data:s}=await supabaseClient.from("dashboard_summary").select("*").single();if(s){$("reportRevenue").textContent=money(s.today_revenue);$("reportExpenses").textContent=money(s.today_expenses);$("reportBookings").textContent=s.active_bookings??0;$("reportOccupancy").textContent=(s.total_rooms?Math.round((Number(s.occupied_rooms||0)/Number(s.total_rooms))*100):0)+"%"}const {data,error}=await supabaseClient.from("daily_revenue").select("*").limit(14);$("revenueList").innerHTML=error?`<div class="empty">${esc(error.message)}</div>`:data?.length?data.map(x=>`<div class="listrow"><div><strong>${date(x.revenue_date)}</strong><small>${x.payment_count||0} payments</small></div><b>${money(x.revenue)}</b></div>`).join(""):`<div class="empty">No revenue data.</div>`}
 
